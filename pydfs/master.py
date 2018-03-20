@@ -3,7 +3,7 @@ import uuid
 import threading 
 import math
 import random
-import ConfigParser
+import configparser
 import signal
 import pickle
 import sys
@@ -16,7 +16,7 @@ def int_handler(signal, frame):
   sys.exit(0)
 
 def set_conf():
-  conf=ConfigParser.ConfigParser()
+  conf=configparser.ConfigParser()
   conf.readfp(open('dfs.conf'))
   MasterService.exposed_Master.block_size = int(conf.get('master','block_size'))
   MasterService.exposed_Master.replication_factor = int(conf.get('master','replication_factor'))
