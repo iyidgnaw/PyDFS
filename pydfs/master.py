@@ -57,8 +57,7 @@ class MasterService(rpyc.Service):
 
         def exposed_write(self, dest, size):
             if self.exists(dest):
-                #TODO: Wipe previous value
-                pass # ignoring for now, will delete it later
+                self.wipe(dest)
 
             self.__class__.file_table[dest] = []
 
@@ -82,6 +81,16 @@ class MasterService(rpyc.Service):
 
         def exists(self, f):
             return f in self.__class__.file_table
+
+        # TODO: Do we really want this?
+        def wipe(self, fname):
+            for block_uuid, node_ids in self.__class__.file_table[fname]:
+                for m in [self.exposed_get_minions()[_] for _ in node_ids]:
+                    host, port = m
+                    con = rpyc.connect(host, port=port)
+                    minion = con.root.Minion()
+                    minion.delete(block_uuid)
+            return
 
         def alloc_blocks(self, dest, num):
             blocks = []
