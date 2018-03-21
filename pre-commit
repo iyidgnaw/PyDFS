@@ -1,0 +1,17 @@
+#!/bin/sh
+
+# Pylint
+find . -iname "*.py" | xargs pylint
+if [[ $? -ne 0 ]]; then
+  echo "Commit Aborted. Please resolve the pylint warning and try again"
+  exit 1 
+fi
+
+# Functional Test
+./test.sh
+if [[ $? -ne 0 ]]; then
+  echo "Commit Aborted. Functional Test Failed" 
+  exit 1 
+fi
+
+exit 0

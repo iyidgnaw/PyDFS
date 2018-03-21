@@ -7,6 +7,7 @@ Simple (~200 lines) distributed file system like HDFS (and of-course GFS). It co
   - rpyc (Really! That's it.)
   
 ### How to run.
+  0. pip3 install -r requirements.txt
   1. Edit `dfs.conf` for setting block size, replication factor and list minions (`minionid:host:port`)
   2. Fireup master and minions.
   3. To store and retrive a file:
@@ -26,3 +27,9 @@ $ python client.py get sometxt
      namespace(currently simple dict)
   7. Logging
   8. Expand this TODO
+
+### Dev
+
+#### To use the pre commit hook
+  1. copy pre-commit to .git/hook and change the file permission if necessary
+  2. Install Pylint (for python3) and use "google-pylint.rc" as your pylint config
