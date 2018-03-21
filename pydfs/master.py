@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 import pickle
@@ -10,6 +11,7 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 
 from utils import get_master_config
+LOG_DIR = '/tmp/minion/log'
 
 # restoring master node might not work, but we are not focusing on it for now
 def get_state():
@@ -38,6 +40,10 @@ def set_conf():
     # if found saved image of master, restore master state.
     if os.path.isfile('fs.img'):
         set_state(*pickle.load(open('fs.img', 'rb')))
+    logging.info("Current Config:")
+    logging.info("Block size: %d, replication_faction: %d, minions: %s",
+                 master.block_size, master.replication_factor,
+                 str(master.minions))
 
 class MasterService(rpyc.Service):
     class exposed_Master(object):
@@ -106,6 +112,10 @@ class MasterService(rpyc.Service):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
+                        format='%(asctime)s--%(levelname)s:%(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
     set_conf()
     signal.signal(signal.SIGINT, int_handler)
     t = ThreadedServer(MasterService, port=2131)
