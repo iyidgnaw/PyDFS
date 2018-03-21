@@ -52,8 +52,12 @@ class MasterService(rpyc.Service):
             mapping = self.__class__.file_table[fname]
             return mapping
 
+        def exposed_delete(self, fname):
+            del self.__class__.file_table[fname]
+
         def exposed_write(self, dest, size):
             if self.exists(dest):
+                #TODO: Wipe previous value
                 pass # ignoring for now, will delete it later
 
             self.__class__.file_table[dest] = []
@@ -81,8 +85,9 @@ class MasterService(rpyc.Service):
 
         def alloc_blocks(self, dest, num):
             blocks = []
-            for _ in range(0, num):
+            for _ in range(num):
                 block_uuid = uuid.uuid1()
+                # TODO: Assigning algorithm.
                 nodes_ids = random.sample(self.__class__.minions.keys(),
                                           self.__class__.replication_factor)
                 blocks.append((block_uuid, nodes_ids))

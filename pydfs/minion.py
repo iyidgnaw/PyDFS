@@ -33,9 +33,10 @@ class MinionService(rpyc.Service):
             minion = con.root.Minion()
             minion.put(block_uuid, data, minions)
 
-        def delete_block(self, block_uuid):
-            #TODO
-            pass
+        def exposed_delete(self, block_uuid):
+            block_addr = DATA_DIR + str(block_uuid)
+            if os.path.isfile(block_addr):
+                os.remove(block_addr)
 
 if __name__ == "__main__":
     if not os.path.isdir(DATA_DIR):

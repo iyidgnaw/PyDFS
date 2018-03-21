@@ -3,6 +3,14 @@
 #
 # Functional test script for PyDFS project.
 
+# Clean up 
+clean(){
+  pkill -f master.py
+  pkill -f minion.py
+  rm -f tmp.txt
+  rm -f fs.img
+}
+
 cd pydfs
 # Bring up master and minions
 python3 master.py &
@@ -14,6 +22,7 @@ fi
 python3 minion.py &
 if [[ $? -ne 0 ]]; then
   echo "Minions fireup failed!"
+  clean
   exit 1
 fi
 
@@ -22,12 +31,14 @@ sleep 3
 
 # Create file with test msg
 TEST_MSG="Put and Get are all green!"
+NOT_FOUND_MSG="404: file not found"
 echo $TEST_MSG > tmp.txt
 
 # Put
 python3 client.py put tmp.txt tmp
 if [[ $? -ne 0 ]]; then
   echo "Put operation failed!"
+  clean
   exit 1
 fi
 
@@ -36,14 +47,22 @@ output=$(python3 client.py get tmp)
 echo $output
 if [[ $output != $TEST_MSG  ]]; then
   echo "GET operation failed!"
+  clean
   exit 1
 fi
 
-# Clean up
-pkill -f master.py
-pkill -f minion.py
-rm -f tmp.txt
-#rm -f fs.img
+# Delete
+python3 client.py delete tmp
 
+# Try Get
+output=$(python3 client.py get tmp)
+echo $output
+if [[ $output != $NOT_FOUND_MSG ]]; then
+  echo "Delete operation failed!"
+  clean
+  exit 1
+fi
+
+clean
 exit 0
 
