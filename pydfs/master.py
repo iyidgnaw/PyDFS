@@ -18,7 +18,7 @@ def int_handler(sig, frame):
 
 def set_conf():
     conf = configparser.ConfigParser()
-    conf.readfp(open('dfs.conf'))
+    conf.read_file(open('dfs.conf'))
     MasterService.exposed_Master.block_size = int(conf.get('master',
                                                            'block_size'))
     MasterService.exposed_Master.replication_factor = \
