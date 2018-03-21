@@ -11,9 +11,17 @@ from rpyc.utils.server import ThreadedServer
 
 from utils import get_master_config
 
+# restoring master node might not work, but we are not focusing on it for now
+def get_state():
+    return {'file_table': MasterService.exposed_Master.file_table, \
+         'block_mapping': MasterService.exposed_Master.block_mapping}
+
+def set_state(state):
+    MasterService.exposed_Master.file_table = state['file_table']
+    MasterService.exposed_Master.block_mapping = state['block_mapping']
+
 def int_handler(sig, frame):
-    pickle.dump(MasterService.exposed_Master.get_state(),
-                open('fs.img', 'wb'))
+    pickle.dump(get_state(), open('fs.img', 'wb'))
     sys.exit(0)
 
 def set_conf():
@@ -28,9 +36,8 @@ def set_conf():
     master.minions[mid] = (host, port)
 
     # if found saved image of master, restore master state.
-    print(*pickle.load(open('fs.img', 'rb')))
     if os.path.isfile('fs.img'):
-        master.set_state(pickle.load(open('fs.img', 'rb')))
+        set_state(*pickle.load(open('fs.img', 'rb')))
 
 class MasterService(rpyc.Service):
     class exposed_Master(object):
@@ -71,13 +78,6 @@ class MasterService(rpyc.Service):
 
         def exists(self, f):
             return f in self.__class__.file_table
-
-        def get_state(self):
-            return (self.file_table, self.block_mapping)
-
-        def set_state(self, state):
-            self.file_table = state[0]
-            self.block_mapping = state[1]
 
         def alloc_blocks(self, dest, num):
             blocks = []
