@@ -1,4 +1,3 @@
-import configparser
 import math
 import os
 import pickle
@@ -10,29 +9,28 @@ import uuid
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
+from utils import get_master_config
+
 def int_handler(sig, frame):
-    pickle.dump((MasterService.exposed_Master.file_table,
-                 MasterService.exposed_Master.block_mapping),
-                 open('fs.img', 'wb'))
+    pickle.dump(MasterService.exposed_Master.get_state(),
+                open('fs.img', 'wb'))
     sys.exit(0)
 
 def set_conf():
-    conf = configparser.ConfigParser()
-    conf.read_file(open('dfs.conf'))
-    MasterService.exposed_Master.block_size = int(conf.get('master',
-                                                           'block_size'))
-    MasterService.exposed_Master.replication_factor = \
-            int(conf.get('master',
-                         'replication_factor'))
-    minions = conf.get('master', 'minions').split(',')
+    conf = get_master_config()
+    master = MasterService.exposed_Master
+
+    master.block_size = int(conf['block_size'])
+    master.replication_factor = int(conf['replication_factor'])
+    minions = conf['minions'].split(',')
     for minion in minions:
         mid, host, port = minion.split(":")
-    MasterService.exposed_Master.minions[mid] = (host, port)
+    master.minions[mid] = (host, port)
 
+    # if found saved image of master, restore master state.
+    print(*pickle.load(open('fs.img', 'rb')))
     if os.path.isfile('fs.img'):
-        MasterService.exposed_Master.file_table,\
-                MasterService.exposed_Master.block_mapping =\
-                    pickle.load(open('fs.img', 'rb'))
+        master.set_state(pickle.load(open('fs.img', 'rb')))
 
 class MasterService(rpyc.Service):
     class exposed_Master(object):
@@ -73,6 +71,13 @@ class MasterService(rpyc.Service):
 
         def exists(self, f):
             return f in self.__class__.file_table
+
+        def get_state(self):
+            return (self.file_table, self.block_mapping)
+
+        def set_state(self, state):
+            self.file_table = state[0]
+            self.block_mapping = state[1]
 
         def alloc_blocks(self, dest, num):
             blocks = []
