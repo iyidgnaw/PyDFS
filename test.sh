@@ -12,6 +12,7 @@ clean(){
 }
 
 cd pydfs
+clean
 # Bring up master and minions
 python3 master.py &
 if [[ $? -ne 0 ]]; then

@@ -10,8 +10,7 @@ import uuid
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
-from utils import get_master_config
-LOG_DIR = '/tmp/minion/log'
+from utils import get_master_config, LOG_DIR
 
 # restoring master node might not work, but we are not focusing on it for now
 def get_state():
@@ -37,9 +36,13 @@ def set_conf():
         mid, host, port = minion.split(":")
     master.minions[mid] = (host, port)
 
+    assert len(minions) >= master.replication_factor,\
+        'not enough minions to hold {} replications'.format(\
+            master.replication_factor)
+
     # if found saved image of master, restore master state.
     if os.path.isfile('fs.img'):
-        set_state(*pickle.load(open('fs.img', 'rb')))
+        set_state(pickle.load(open('fs.img', 'rb')))
     logging.info("Current Config:")
     logging.info("Block size: %d, replication_faction: %d, minions: %s",
                  master.block_size, master.replication_factor,

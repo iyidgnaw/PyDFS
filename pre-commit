@@ -8,8 +8,6 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Functional Test
-pkill -f master.py
-pkill -f minion.py
 ./test.sh
 if [[ $? -ne 0 ]]; then
   echo "Commit Aborted. Functional Test Failed" 
