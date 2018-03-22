@@ -24,7 +24,7 @@ def delete_from_minion(block_uuid, minion):
     return minion.delete(block_uuid)
 
 def get(master, fname):
-    file_table = master.get_file_table_entry(fname)
+    file_table = master.read(fname)
     if not file_table:
         print("404: file not found")
         return
@@ -48,7 +48,7 @@ def put(master, source, dest):
             send_to_minion(block_uuid, data, minions)
 
 def delete(master, fname):
-    file_table = master.get_file_table_entry(fname)
+    file_table = master.read(fname)
     if not file_table:
         print("404: file not found")
         return
