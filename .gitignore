@@ -90,3 +90,4 @@ ENV/
 
 *.txt
 *.img
+*.sublime-*
