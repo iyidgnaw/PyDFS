@@ -35,8 +35,8 @@ def set_conf():
     minions = conf['minions'].split(',')
     for minion in minions:
         mid, host, port = minion.split(":")
-    master.minions[int(mid)] = (host, port)
-    master.minion_content[int(mid)] = []
+        master.minions[int(mid)] = (host, port)
+        master.minion_content[int(mid)] = []
 
     assert len(minions) >= master.replication_factor,\
         'not enough minions to hold {} replications'.format(\

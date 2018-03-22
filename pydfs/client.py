@@ -58,6 +58,10 @@ def delete(master, fname):
         for m in [master.get_minions()[_] for _ in node_ids]:
             delete_from_minion(block_uuid, m)
 
+def backup(master, mid):
+    master.replicate(int(mid))
+
+
 def main(args):
     con = rpyc.connect("localhost", port=2131)
     master = con.root.Master()
@@ -68,6 +72,8 @@ def main(args):
         put(master, args[1], args[2])
     elif args[0] == "delete":
         delete(master, args[1])
+    elif args[0] == "backup":
+        backup(master, args[1])
     else:
         print("try 'put srcFile destFile OR get file'")
 

@@ -23,7 +23,9 @@ if [[ $? -ne 0 ]]; then
   exit 1
 fi
 
-python3 minion.py &
+python3 minion.py 8888&
+python3 minion.py 8889&
+python3 minion.py 8890&
 if [[ $? -ne 0 ]]; then
   echo "Minions fireup failed!"
   clean
