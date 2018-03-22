@@ -18,15 +18,13 @@ $ python client.py get sometxt
 ##### Stop it using Ctll + C so that it will dump the namespace.
 
 ## TODO:
-  1. Implement Delete
-  2. Use better algo for minion selection to put a block (currently random)
-  3. Dump namespace periodically (maybe)
-  4. Minion heartbeats / Block reports
-  5. Add entry in namespace only after write succeeds.
-  6. Use proper datastructure(tree-like eg. treedict) to sotre
+  - Use better algo for minion selection to put a block (currently random)
+  - Dump namespace periodically (check-pointing)
+  - Minion heartbeats / Block reports (on which Luke is working)
+  - Add entry in namespace only after write succeeds
+  - Use proper datastructure(tree-like eg. treedict) to sotre
      namespace(currently simple dict)
-  7. Logging
-  8. Expand this TODO
+  - Expand this TODO
 
 ### Dev
 
