@@ -24,7 +24,7 @@ def delete_from_minion(block_uuid, minion):
     return minion.delete(block_uuid)
 
 def get(master, fname):
-    file_table = master.get_file_table_entry(fname)
+    file_table = master.read(fname)
     if not file_table:
         print("404: file not found")
         return
@@ -48,7 +48,7 @@ def put(master, source, dest):
             send_to_minion(block_uuid, data, minions)
 
 def delete(master, fname):
-    file_table = master.get_file_table_entry(fname)
+    file_table = master.read(fname)
     if not file_table:
         print("404: file not found")
         return
@@ -57,6 +57,10 @@ def delete(master, fname):
     for block_uuid, node_ids in file_table:
         for m in [master.get_minions()[_] for _ in node_ids]:
             delete_from_minion(block_uuid, m)
+
+def backup(master, mid):
+    master.replicate(int(mid))
+
 
 def main(args):
     con = rpyc.connect("localhost", port=2131)
@@ -68,6 +72,8 @@ def main(args):
         put(master, args[1], args[2])
     elif args[0] == "delete":
         delete(master, args[1])
+    elif args[0] == "backup":
+        backup(master, args[1])
     else:
         print("try 'put srcFile destFile OR get file'")
 
