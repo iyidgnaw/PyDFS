@@ -27,6 +27,24 @@ class MinionService(rpyc.Service):
             with open(block_addr) as f:
                 return f.read()
 
+        def exposed_delete(self, block_uuid):
+            block_addr = DATA_DIR + str(block_uuid)
+            if os.path.isfile(block_addr):
+                os.remove(block_addr)
+            #logging.info("DELETE: %d", block_uuid)
+
+        def exposed_replicate(self, block_uuid, host, port):
+            block_addr = DATA_DIR + str(block_uuid)
+            if not os.path.isfile(block_addr):
+                return
+            with open(block_addr) as f:
+                data = f.read()
+                con = rpyc.connect(host, port=port)
+                target = con.root.Minion()
+                target.put(block_uuid, data, [])
+###############################################################################
+        # Private functions
+###############################################################################
         def forward(self, block_uuid, data, minions):
             logging.info("8888: forwarding %d to:%s", block_uuid, str(minions))
             minion = minions[0]
@@ -36,12 +54,6 @@ class MinionService(rpyc.Service):
             con = rpyc.connect(host, port=port)
             minion = con.root.Minion()
             minion.put(block_uuid, data, minions)
-
-        def exposed_delete(self, block_uuid):
-            block_addr = DATA_DIR + str(block_uuid)
-            if os.path.isfile(block_addr):
-                os.remove(block_addr)
-            #logging.info("DELETE: %d", block_uuid)
 
 if __name__ == "__main__":
     #TODO: Enable Logging in exposed function.

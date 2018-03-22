@@ -35,8 +35,8 @@ def set_conf():
     minions = conf['minions'].split(',')
     for minion in minions:
         mid, host, port = minion.split(":")
-    master.minions[mid] = (host, port)
-    master.minion_content[mid] = []
+    master.minions[int(mid)] = (host, port)
+    master.minion_content[int(mid)] = []
 
     assert len(minions) >= master.replication_factor,\
         'not enough minions to hold {} replications'.format(\
@@ -98,23 +98,22 @@ class MasterService(rpyc.Service):
         def exposed_get_minions(self):
             return self.__class__.minions
 
-        def calc_num_blocks(self, size):
-            return int(math.ceil(float(size)/self.__class__.block_size))
+        def exposed_replicate(self, mid):
+            for block_id in self.__class__.minion_content[mid]:
+                locations = self.__class__.block_mapping[block_id]
+                # TODO: Change locations to double linked list
+                source_mid = random.choice([x for x in locations if x != mid])
+                target_mid = random.choice([x for x in self.__class__.minions if
+                    x not in locations])
+                # Replicate block from source to target
+                self.replicate_block(block_id, source_mid, target_mid)
+                # Update information registered on Master
+                self.__class__.block_mapping[block_id].append(target_mid)
+                self.__class__.minion_content[target_mid].append(block_id)
 
-        def exists(self, f):
-            return f in self.__class__.file_table
-
-        # TODO: Do we really want this?
-        def wipe(self, fname):
-            for block_uuid in self.__class__.file_table[fname]:
-                node_ids = self.__class__.block_mapping[block_uuid]
-                for m in [self.exposed_get_minions()[_] for _ in node_ids]:
-                    host, port = m
-                    con = rpyc.connect(host, port=port)
-                    minion = con.root.Minion()
-                    minion.delete(block_uuid)
-            return
-
+###############################################################################
+        # Private functions
+###############################################################################
         def alloc_blocks(self, dest, num):
             blocks = []
             for _ in range(num):
@@ -131,6 +130,31 @@ class MasterService(rpyc.Service):
 
                 self.__class__.file_table[dest].append(block_uuid)
             return blocks
+
+        def calc_num_blocks(self, size):
+            return int(math.ceil(float(size)/self.__class__.block_size))
+
+        def exists(self, f):
+            return f in self.__class__.file_table
+
+        def replicate_block(self, block_id, source, target):
+            source_host, source_port = self.__class__.minions[source]
+            target_host, target_port = self.__class__.minions[target]
+            con = rpyc.connect(source_host, port=source_port)
+            minion = con.root.Minion()
+            minion.replicate(block_id, target_host, target_port)
+
+
+        def wipe(self, fname):
+            for block_uuid in self.__class__.file_table[fname]:
+                node_ids = self.__class__.block_mapping[block_uuid]
+                for m in [self.exposed_get_minions()[_] for _ in node_ids]:
+                    host, port = m
+                    con = rpyc.connect(host, port=port)
+                    minion = con.root.Minion()
+                    minion.delete(block_uuid)
+            return
+
 
 
 if __name__ == "__main__":
