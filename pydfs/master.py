@@ -6,11 +6,15 @@ import random
 import signal
 import sys
 import uuid
+from time import sleep
+from threading import Thread
 
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
 from utils import get_master_config, LOG_DIR
+
+MASTER_PORT = 2131
 
 # Issue: State related functions may not work correctly after the Master
 # definition changed.
@@ -67,6 +71,7 @@ class MasterService(rpyc.Service):
 
         block_size = 0
         replication_factor = 0
+        health_monitoring = 0
 
         def exposed_read(self, fname):
             if fname in self.__class__.file_table:
@@ -111,6 +116,12 @@ class MasterService(rpyc.Service):
                 self.__class__.block_mapping[block_id].append(target_mid)
                 self.__class__.minion_content[target_mid].append(block_id)
 
+        def exposed_health_report(self):
+            if not self.__class__.health_monitoring:
+                Thread(target=self.health_monitor).start()
+                self.__class__.health_monitoring = 1
+            return self.health_check()
+
 ###############################################################################
         # Private functions
 ###############################################################################
@@ -133,6 +144,33 @@ class MasterService(rpyc.Service):
 
         def calc_num_blocks(self, size):
             return int(math.ceil(float(size)/self.__class__.block_size))
+
+        def minion_lost_handler(self, status):
+            # TODO
+            logging.info('1 or more minion dead, status: %s', format(status))
+
+        def health_monitor(self):
+            # actively reach out to minions forever
+            # SIDE EFFECT: calls minion_lost_handler when
+            while 1:
+                minions_status = self.health_check()
+                if not all(minions_status.values()):
+                    self.minion_lost_handler(minions_status)
+                sleep(.1)
+
+
+        def health_check(self):
+            # reach out to known minions on file
+            # RETURN {minion -> [10]}
+            res = {}
+            for m, (host, port) in self.__class__.minions.items():
+                try:
+                    con = rpyc.connect(host, port=port)
+                    minion = con.root.Minion()
+                    res[m] = 1 if minion.ping() == 'pong' else 0
+                except ConnectionRefusedError:
+                    res[m] = 0
+            return res
 
         def exists(self, f):
             return f in self.__class__.file_table

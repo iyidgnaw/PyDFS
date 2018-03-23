@@ -24,6 +24,8 @@ class MinionService(rpyc.Service):
             if minions:
                 self.forward(block_uuid, data, minions)
 
+        def exposed_ping(self):
+            return 'pong'
 
         def exposed_get(self, block_uuid):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
