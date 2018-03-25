@@ -7,6 +7,7 @@
 clean(){
   pkill -f master.py
   pkill -f minion.py
+  pkill -f proxy.py
   rm -f tmp.txt
   rm -f fs.img
 }
@@ -20,6 +21,12 @@ clean
 python3 master.py &
 if [[ $? -ne 0 ]]; then
   echo "Master fireup failed!"
+  exit 1
+fi
+
+python3 proxy.py &
+if [[ $? -ne 0 ]]; then
+  echo "Proxy fireup failed!"
   exit 1
 fi
 

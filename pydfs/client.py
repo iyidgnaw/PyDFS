@@ -63,8 +63,9 @@ def backup(master, mid):
 
 
 def main(args):
-    con = rpyc.connect("localhost", port=2131)
-    master = con.root.Master()
+    con = rpyc.connect('localhost', 2130)
+    proxy = con.root.Proxy()
+    master = proxy.get_master()
 
     if args[0] == "get":
         get(master, args[1])
