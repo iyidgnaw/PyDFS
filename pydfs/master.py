@@ -14,6 +14,8 @@ from rpyc.utils.server import ThreadedServer
 
 from utils import LOG_DIR
 
+from conf import block_size, replication_factor, minions_conf
+
 MASTER_PORT = 2131
 
 # Issue: State related functions may not work correctly after the Master
@@ -29,8 +31,6 @@ def set_state(state):
 def int_handler(sig, frame):
     pickle.dump(get_state(), open('fs.img', 'wb'))
     sys.exit(0)
-
-from conf import block_size, replication_factor, minions_conf
 
 def set_conf():
     # load and use conf file, restore from dump if possible.
