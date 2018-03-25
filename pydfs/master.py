@@ -12,7 +12,7 @@ from threading import Thread
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
-from utils import get_master_config, LOG_DIR
+from utils import LOG_DIR
 
 MASTER_PORT = 2131
 
@@ -30,19 +30,19 @@ def int_handler(sig, frame):
     pickle.dump(get_state(), open('fs.img', 'wb'))
     sys.exit(0)
 
+from conf import block_size, replication_factor, minions_conf
+
 def set_conf():
-    conf = get_master_config()
+    # load and use conf file, restore from dump if possible.
     master = MasterService.exposed_Master
+    master.block_size = block_size
+    master.replication_factor = replication_factor
+    for mid, loc in minions_conf.items():
+        host, port = loc.split(":")
+        master.minions[mid] = (host, port)
+        master.minion_content[mid] = []
 
-    master.block_size = int(conf['block_size'])
-    master.replication_factor = int(conf['replication_factor'])
-    minions = conf['minions'].split(',')
-    for minion in minions:
-        mid, host, port = minion.split(":")
-        master.minions[int(mid)] = (host, port)
-        master.minion_content[int(mid)] = []
-
-    assert len(minions) >= master.replication_factor,\
+    assert len(minions_conf) >= master.replication_factor,\
         'not enough minions to hold {} replications'.format(\
             master.replication_factor)
 

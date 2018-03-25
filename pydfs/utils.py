@@ -8,8 +8,3 @@ LOG_DIR = '/tmp/minion/log'
 if not os.path.isdir(LOG_DIR):
     os.makedirs(LOG_DIR)
 
-def get_master_config():
-    config = ConfigParser()
-    config.read_file(open(CONFIG_PATH))
-    return {s:dict(config.items(s)) for s in config.sections()}['master']
-    
