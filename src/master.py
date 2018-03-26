@@ -3,7 +3,6 @@ import math
 import os
 import pickle
 import random
-import signal
 import sys
 import uuid
 from time import sleep
@@ -193,14 +192,15 @@ class MasterService(rpyc.Service):
                     minion.delete(block_uuid)
             return
 
-
-
-if __name__ == "__main__":
+def startMasterService():
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
-                        format='%(asctime)s--%(levelname)s:%(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.DEBUG)
+                       format='%(asctime)s--%(levelname)s:%(message)s',
+                       datefmt='%m/%d/%Y %I:%M:%S %p',
+                       level=logging.DEBUG)
     set_conf()
-    signal.signal(signal.SIGINT, int_handler)
+    # signal.signal(signal.SIGINT, int_handler)
     t = ThreadedServer(MasterService, port=2131)
     t.start()
+
+if __name__ == "__main__":
+    startMasterService()

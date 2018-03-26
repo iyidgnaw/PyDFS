@@ -15,7 +15,7 @@ clean(){
 # Init
 ###############################################################################
 
-cd pydfs
+cd src
 clean
 # Bring up master and minions
 python3 master.py &

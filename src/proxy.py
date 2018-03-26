@@ -25,10 +25,13 @@ class ProxyService(rpyc.Service):
                 self.__class__.master_con = rpyc.connect("localhost", port=2131)
 
 
-if __name__ == "__main__":
+def startProxyService():
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'proxy'),
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
     t = ThreadedServer(ProxyService, port=PROXY_PORT)
     t.start()
+
+if __name__ == "__main__":
+    startProxyService()

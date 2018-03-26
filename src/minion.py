@@ -20,6 +20,7 @@ class MinionService(rpyc.Service):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
             with open(block_addr, 'w') as f:
                 f.write(data)
+            # TODO: block size check here
             #logging.info("PUT: %d", block_uuid)
             if minions:
                 self.forward(block_uuid, data, minions)
@@ -54,7 +55,7 @@ class MinionService(rpyc.Service):
         # Private functions
 ###############################################################################
         def forward(self, block_uuid, data, minions):
-            logging.info("8888: forwarding %d to:%s", block_uuid, str(minions))
+            #logging.info("8888: forwarding %d to:%s", block_uuid, str(minions))
             minion = minions[0]
             minions = minions[1:]
             host, port = minion
@@ -63,11 +64,8 @@ class MinionService(rpyc.Service):
             minion = con.root.Minion()
             minion.put(block_uuid, data, minions)
 
-if __name__ == "__main__":
-    #TODO: Enable Logging in exposed function.
-    if len(sys.argv) < 2:
-        print("You need to specify the port number")
-    server_port = int(sys.argv[1])
+
+def startMinionService(server_port):
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
@@ -76,3 +74,11 @@ if __name__ == "__main__":
         os.mkdir(DATA_DIR)
     t = ThreadedServer(MinionService, port=server_port)
     t.start()
+
+
+if __name__ == "__main__":
+    #TODO: Enable Logging in exposed function.
+    if len(sys.argv) < 2:
+        print("You need to specify the port number")
+    minion_port = int(sys.argv[1])
+    startMinionService(minion_port)
