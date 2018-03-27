@@ -24,6 +24,16 @@ $ python client.py get sometxt
   - Add entry in namespace only after write succeeds
   - Use proper datastructure(tree-like eg. treedict) to sotre
      namespace(currently simple dict)
+  - Add pylint and git-commit-hook to env (xinwen)
+  - Admin api and user interface (Luke)
+  - Delete/Add minion node (diyi)
+  - Block integrity check (diyi)
+  - Logging issue in minion service
+  - Test coverage (put, get, delete) in python script(xinwen) 
+    - Check the result after every operation
+    - List all supported test case.
+    - Add to git commit hook
+    - Remove all test related file to keep the repo clean
   - Expand this TODO
 
 ### Dev
