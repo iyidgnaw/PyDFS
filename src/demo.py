@@ -1,10 +1,10 @@
+import os
 from threading import Thread
-import rpyc
 from minion import startMinionService
 from proxy import startProxyService
 from master import startMasterService
-from client import put
-from client import get
+from client import client
+
 
 def activate_minion(minion_port):
     thread = Thread(target=startMinionService, args=(minion_port,))
@@ -19,12 +19,22 @@ def activate_master():
     thread.start()
 
 def simulate_user_operations():
-    con = rpyc.connect('localhost', 2130)
-    proxy = con.root.Proxy()
-    master = proxy.get_master()
+    client_service = client(2130)
 
-    put(master, "./data/a.txt", "pub")
-    get(master, "pub")
+    path = './sample.txt'
+    generate_file(path, "some testing data")
+
+    client_service.put(path, "pub")
+    client_service.get("pub")
+
+    os.remove(path)
+
+
+def generate_file(path, data):
+    f = open(path, "w+")
+    f.write(data)
+    f.close()
+    return path
 
 
 if __name__ == "__main__":
