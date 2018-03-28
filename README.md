@@ -10,7 +10,7 @@ Simple (~200 lines) distributed file system like HDFS (and of-course GFS). It co
   0. pip3 install -r requirements.txt
   1. Edit `dfs.conf` for setting block size, replication factor and list minions (`minionid:host:port`)
   2. Fireup master and minions.
-  3. To store and retrive a file:
+  3. To store and retrieve a file:
 ```sh
 $ python client.py put sourcefile.txt sometxt
 $ python client.py get sometxt
@@ -22,9 +22,7 @@ $ python client.py get sometxt
   - Dump namespace periodically (check-pointing)
   - Minion heartbeats / Block reports (on which Luke is working)
   - Add entry in namespace only after write succeeds
-  - Use proper datastructure(tree-like eg. treedict) to sotre
-     namespace(currently simple dict)
-  - Add pylint and git-commit-hook to env (xinwen)
+  - Use proper datastructure(tree-like eg. treedict) to store namespace(currently simple dict)
   - Admin api and user interface (Luke)
   - Delete/Add minion node (diyi)
   - Block integrity check (diyi)
@@ -32,8 +30,6 @@ $ python client.py get sometxt
   - Test coverage (put, get, delete) in python script(xinwen) 
     - Check the result after every operation
     - List all supported test case.
-    - Add to git commit hook
-    - Remove all test related file to keep the repo clean
   - Expand this TODO
 
 ### Dev

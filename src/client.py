@@ -2,10 +2,9 @@ import os
 import sys
 import rpyc
 
-
 class client:
-    def __init__(self, port_num):
-        self.con = rpyc.connect('localhost', port_num)
+    def __init__(self, proxy_port_num):
+        self.con = rpyc.connect('localhost', proxy_port_num)
         self.proxy = self.con.root.Proxy()
         self.master = self.proxy.get_master()
 
