@@ -102,10 +102,26 @@ class MasterService(rpyc.Service):
         def exposed_get_minions(self):
             return self.__class__.minions
 
+        def exposed_delete_minion(self, mid):
+            self.exposed_replicate(mid)
+            host, port = self.__class__.minions[mid]
+            con = rpyc.connect(host, port=port)
+            minion = con.root.Minion()
+
+            del self.__class__.minions[mid]
+            for block_id in self.__class__.minion_content[mid]:
+                self.__class__.block_mapping[block_id].remove(mid)
+                minion.delete(block_id)
+            del self.__class__.minion_content[mid]
+
+        def exposed_add_minion(self, host, port):
+            mid = max(self.__class__.minions) + 1
+            self.__class__.minions[mid] = (host, port)
+            self.__class__.minion_content[mid] = []
+
         def exposed_replicate(self, mid):
             for block_id in self.__class__.minion_content[mid]:
                 locations = self.__class__.block_mapping[block_id]
-                # TODO: Change locations to double linked list
                 source_mid = random.choice([x for x in locations if x != mid])
                 target_mid = random.choice([x for x in self.__class__.minions if
                     x not in locations])
@@ -128,7 +144,6 @@ class MasterService(rpyc.Service):
             blocks = []
             for _ in range(num):
                 block_uuid = uuid.uuid1()
-                # TODO: Assigning algorithm.
                 nodes_ids = random.sample(self.__class__.minions.keys(),
                                           self.__class__.replication_factor)
 

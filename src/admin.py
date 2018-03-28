@@ -21,8 +21,11 @@ except ConnectionRefusedError:
 def create_minion_node():
     pass
 
-def attach_minion_node():
-    pass
+def delete_minion_node(mid):
+    Master.delete_minion(mid)
+
+def attach_minion_node(host, port):
+    Master.add_minion(host, port)
 
 def switch_master_node():
     pass

@@ -15,7 +15,8 @@ class client:
 
         con = rpyc.connect(host, port=port)
         minion = con.root.Minion()
-        minion.put(block_uuid, data, replicate_minions)
+        rc = minion.put(block_uuid, data, replicate_minions)
+        return rc
 
     def read_from_minion(self, block_uuid, minion):
         host, port = minion
@@ -51,7 +52,9 @@ class client:
             for block_uuid, node_ids in blocks:
                 data = f.read(self.master.get_block_size())
                 minions = [self.master.get_minions()[_] for _ in node_ids]
-                self.send_to_minion(block_uuid, data, minions)
+                if self.send_to_minion(block_uuid, data, minions):
+                    print("Put Operation failed.")
+                    break
 
     def delete(self, fname):
         file_table = self.master.read(fname)

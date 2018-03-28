@@ -5,9 +5,9 @@ import sys
 import rpyc
 
 from rpyc.utils.server import ThreadedServer
+from utils import LOG_DIR
 
 DATA_DIR = "/tmp/minion/"
-LOG_DIR = os.path.join(DATA_DIR, 'log')
 
 class MinionService(rpyc.Service):
     class exposed_Minion(object):
@@ -19,11 +19,14 @@ class MinionService(rpyc.Service):
         def exposed_put(self, block_uuid, data, minions):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
             with open(block_addr, 'w') as f:
-                f.write(data)
-            # TODO: block size check here
+                size = f.write(data)
+                if size != len(data):
+                    return 1
+
             #logging.info("PUT: %d", block_uuid)
             if minions:
                 self.forward(block_uuid, data, minions)
+            return 0
 
         def exposed_ping(self):
             return 'pong'
