@@ -34,16 +34,19 @@ class client:
         file_table = self.master.read(fname)
         if not file_table:
             print("404: file not found")
-            return
+            return None
 
+        result = ''
         for block_uuid, nodes_ids in file_table:
             for m in [self.master.get_minions()[_] for _ in nodes_ids]:
                 data = self.read_from_minion(block_uuid, m)
                 if data:
-                    sys.stdout.write(data)
+                    result += data
                     break
                 else:
                     print("No blocks found. Possibly a corrupt file")
+        return result
+
 
     def put(self, source, dest):
         size = os.path.getsize(source)

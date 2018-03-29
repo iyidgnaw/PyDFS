@@ -48,21 +48,31 @@ class demo:
     def simulate_user_operations(self):
         client_service = client(2130)
 
-        # Generate some
+        # Generate a file with some data
         path = './sample.txt'
-        generate_file(path, "some testing data")
+        text = "some testing data"
+        generate_file(path, text)
 
         # perform user operations
         client_service.put(path, "pub")
-        client_service.get("pub")
+        result = client_service.get("pub")
+        client_service.delete("pub")
 
         # remove generated file
         os.remove(path)
 
+        assert text == result
+
+        result = client_service.get("pub")
+        assert result is None
+
+        print("All user operations successful!")
+
+
     def cleanUp(self):
         for ref in self.process_ref:
             ref.terminate()
-
+        print("All services terminated!")
 
 if __name__ == "__main__":
     # TODO: extract all hard coded value out
