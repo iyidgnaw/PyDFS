@@ -24,8 +24,8 @@ $ python client.py get sometxt
   - Add entry in namespace only after write succeeds
   - Use proper datastructure(tree-like eg. treedict) to store namespace(currently simple dict)
   - Admin api and user interface (Luke)
-  - Delete/Add minion node (diyi)
-  - Block integrity check (diyi)
+  - ~~Delete/Add minion node~~ (diyi)
+  - ~~Block integrity check~~ (diyi)
   - Logging issue in minion service
   - Test coverage (put, get, delete) in python script(xinwen) 
     - Check the result after every operation

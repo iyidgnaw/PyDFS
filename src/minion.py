@@ -1,7 +1,8 @@
 import logging
 import os
-import random
 import sys
+import threading
+import uuid
 import rpyc
 
 from rpyc.utils.server import ThreadedServer
@@ -14,11 +15,12 @@ class MinionService(rpyc.Service):
         blocks = {}
         # To test the project on several port on single machine, we need to
         # differ the file_name saved.
-        m_uuid = random.choice(range(1000))
+        m_uuid = str(uuid.uuid4())
 
         def exposed_put(self, block_uuid, data, minions):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
             with open(block_addr, 'w') as f:
+
                 size = f.write(data)
                 if size != len(data):
                     return 1
@@ -57,15 +59,26 @@ class MinionService(rpyc.Service):
 ###############################################################################
         # Private functions
 ###############################################################################
+        # Previously, for each block, we have data flow like this:
+        # Client -> m1 -> m2 -> ...
+        # While the problem is when one of the node on the path is dead, all it
+        # descendants fail after it. And it's not effective to forward data
+        # linearly.
+        # TODO: The next step would be how to effectively handle the failure
+        # during the forwarding.
         def forward(self, block_uuid, data, minions):
             #logging.info("8888: forwarding %d to:%s", block_uuid, str(minions))
-            minion = minions[0]
-            minions = minions[1:]
-            host, port = minion
+            for minion in minions:
+                t = threading.Thread(target=self.forward_worker,
+                        args=(block_uuid, data, minion,))
+                t.daemon = True
+                t.start()
 
+        def forward_worker(self, block_uuid, data, minion):
+            host, port = minion
             con = rpyc.connect(host, port=port)
             minion = con.root.Minion()
-            minion.put(block_uuid, data, minions)
+            minion.put(block_uuid, data, None)
 
 
 def startMinionService(server_port):

@@ -143,7 +143,7 @@ class MasterService(rpyc.Service):
         def alloc_blocks(self, dest, num):
             blocks = []
             for _ in range(num):
-                block_uuid = uuid.uuid1()
+                block_uuid = str(uuid.uuid1())
                 nodes_ids = random.sample(self.__class__.minions.keys(),
                                           self.__class__.replication_factor)
 
