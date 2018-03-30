@@ -68,6 +68,10 @@ class MasterService(rpyc.Service):
         # TODO: Merge 'minions' and 'minion_content'
         minions = {}
 
+        # mid to (host,port) mapping
+        master_cluter = {}
+        mas_id = None
+
         block_size = 0
         replication_factor = 0
         health_monitoring = 0
@@ -79,6 +83,7 @@ class MasterService(rpyc.Service):
             return None
 
         def exposed_delete(self, fname):
+            Thread(target=self.masters_delete, args=[fname]).start()
             for block_id in self.__class__.file_table[fname]:
                 for mid in self.__class__.block_mapping[block_id]:
                     self.__class__.minion_content[mid].remove(block_id)
@@ -99,25 +104,40 @@ class MasterService(rpyc.Service):
         def exposed_get_block_size(self):
             return self.__class__.block_size
 
-        def exposed_get_minions(self):
-            return self.__class__.minions
+        def exposed_get_minions(self, mid_list):
+            return [self.__class__.minions[mid] for mid in mid_list]
+
+        def exposed_get_minion(self, mid):
+            return self.__class__.minions[mid]
+
+        def exposed_admin_delete_minion(self, mid):
+            # peacefully (intentionally) delete minion
+            # where deleted minion's data gets replicated.
+            self.exposed_replicate(mid)
+            # host, port = self.__class__.minions[mid]
+            # con = rpyc.connect(host, port=port)
+            # minion = con.root.Minion()
+            def sublings_delete_minion(mid):
+                for m in self.get_master_siblings():
+                    m.delete_minion(mid)
+
+            self.exposed_delete_minion(mid)
+            Thread(target=sublings_delete_minion, args=[mid]).start()
 
         def exposed_delete_minion(self, mid):
-            self.exposed_replicate(mid)
-            host, port = self.__class__.minions[mid]
-            con = rpyc.connect(host, port=port)
-            minion = con.root.Minion()
-
+            # 'delete minion' in a sense where we only update Master metadata
             del self.__class__.minions[mid]
             for block_id in self.__class__.minion_content[mid]:
                 self.__class__.block_mapping[block_id].remove(mid)
-                minion.delete(block_id)
+                # minion.delete(block_id)
             del self.__class__.minion_content[mid]
 
         def exposed_add_minion(self, host, port):
             mid = max(self.__class__.minions) + 1
             self.__class__.minions[mid] = (host, port)
             self.__class__.minion_content[mid] = []
+            self.flush_attr_entry('minions', mid)
+            self.flush_attr_entry('minion_content', mid)
 
         def exposed_replicate(self, mid):
             for block_id in self.__class__.minion_content[mid]:
@@ -130,6 +150,8 @@ class MasterService(rpyc.Service):
                 # Update information registered on Master
                 self.__class__.block_mapping[block_id].append(target_mid)
                 self.__class__.minion_content[target_mid].append(block_id)
+                self.flush_attr_entry('block_mapping', block_id)
+                self.flush_attr_entry('minion_content', target_mid)
 
         def exposed_health_report(self):
             if not self.__class__.health_monitoring:
@@ -137,9 +159,61 @@ class MasterService(rpyc.Service):
                 self.__class__.health_monitoring = 1
             return self.health_check()
 
+        def exposed_update_attr(self, attr_info, wipe_original=False):
+            # update_attr is used by self.flush method.
+            # "attr_info" is a tuple: (attr_name, attr_value)
+            attr_name, attr_value = attr_info
+            attr = getattr(self.__class__, attr_name)
+            assert isinstance(attr, dict) and isinstance(attr_value, dict)
+            if wipe_original:
+                attr = {}
+            # update given attribute using the given update dict
+            attr.update(attr_value)
+
 ###############################################################################
         # Private functions
 ###############################################################################
+        # DEBUG USE ONLY
+        # def exposed_eval_this(self, statement):
+        #     eval(statement)
+
+        def masters_delete(self, fname):
+            for m in self.get_master_siblings():
+                m.delete(fname)
+
+
+        def flush(self, table, entry_key, wipe):
+            # flush one entry in the given attr table to other masters
+            attr = getattr(self.__class__, table)
+            update_dict = {}
+
+            # if 'wipe' flag is on, it means that the entire table is flushed
+            update_dict[table] = attr if wipe else {entry_key: attr[entry_key]}
+
+            # "Yo, master brothers and sisters:
+            #  this `table[entry_key]` got updated, I'm updating you guys."
+            # TODO: parallel this.
+            for m in self.get_master_siblings():
+                m.update_attr(update_dict, wipe_original=wipe)
+
+        def flush_attr_entry(self, table, entry_key):
+            Thread(target=self.flush, args=[table, entry_key, False]).start()
+
+        def flush_attr_table(self, table):
+            Thread(target=self.flush, args=[table, None, True]).start()
+
+        def get_master_siblings(self):
+            for mas_id, (host, port) in self.__class__.master_cluter.items():
+                if mas_id == self.__class__.mas_id:
+                    continue
+                try:
+                    con = rpyc.connect(host, port)
+                    m = con.root.Master()
+                    yield m
+                except ConnectionRefusedError:
+                    self.master_lost_handler(mas_id)
+                    continue
+
         def alloc_blocks(self, dest, num):
             blocks = []
             for _ in range(num):
@@ -154,6 +228,7 @@ class MasterService(rpyc.Service):
                 blocks.append((block_uuid, nodes_ids))
 
                 self.__class__.file_table[dest].append(block_uuid)
+            self.flush_attr_entry('file_table', dest)
             return blocks
 
         def calc_num_blocks(self, size):
@@ -200,7 +275,7 @@ class MasterService(rpyc.Service):
         def wipe(self, fname):
             for block_uuid in self.__class__.file_table[fname]:
                 node_ids = self.__class__.block_mapping[block_uuid]
-                for m in [self.exposed_get_minions()[_] for _ in node_ids]:
+                for m in self.exposed_get_minions(node_ids):
                     host, port = m
                     con = rpyc.connect(host, port=port)
                     minion = con.root.Minion()
