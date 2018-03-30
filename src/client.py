@@ -24,6 +24,15 @@ class client:
         minion = con.root.Minion()
         return minion.get(block_uuid)
 
+    def read_from_minions(self, block_uuid, minions):
+        for minion in minions:
+            try:
+                return self.read_from_minion(block_uuid, minion)
+            except ConnectionRefusedError:
+                continue
+        print("No blocks found. Possibly a corrupt file")
+        return ''
+
     def delete_from_minion(self, block_uuid, minion):
         host, port = minion
         con = rpyc.connect(host, port=port)
@@ -34,17 +43,12 @@ class client:
         file_table = self.master.read(fname)
         if not file_table:
             print("404: file not found")
-            return None
+            return ''
 
         result = ''
-        for block_uuid, nodes_ids in file_table:
-            for m in [self.master.get_minions()[_] for _ in nodes_ids]:
-                data = self.read_from_minion(block_uuid, m)
-                if data:
-                    result += data
-                    break
-                else:
-                    print("No blocks found. Possibly a corrupt file")
+        for block_uuid, node_ids in file_table:
+            minions = self.master.get_minions(node_ids)
+            result += self.read_from_minions(block_uuid, minions)
         return result
 
 
@@ -54,7 +58,7 @@ class client:
         with open(source) as f:
             for block_uuid, node_ids in blocks:
                 data = f.read(self.master.get_block_size())
-                minions = [self.master.get_minions()[_] for _ in node_ids]
+                minions = self.master.get_minions(node_ids)
                 if self.send_to_minion(block_uuid, data, minions):
                     print("Put Operation failed.")
                     break
@@ -67,7 +71,7 @@ class client:
 
         self.master.delete(fname)
         for block_uuid, node_ids in file_table:
-            for m in [self.master.get_minions()[_] for _ in node_ids]:
+            for m in self.master.get_minions(node_ids):
                 self.delete_from_minion(block_uuid, m)
 
     def backup(self, mid):
@@ -77,7 +81,7 @@ class client:
 def main(args):
     client_service = client(2130)
     if args[0] == "get":
-        client_service.get(args[1])
+        sys.stdout.write(client_service.get(args[1]))
     elif args[0] == "put":
         client_service.put(args[1], args[2])
     elif args[0] == "delete":
