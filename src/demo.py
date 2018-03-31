@@ -68,10 +68,10 @@ class demo:
         result = client_service.get("pub")
 
         # check if delete is working
-        assert result is None, "Client deletion not working"
+        assert result == "", "Client deletion not working"
         print("All user operations successful!")
 
-    def cleanUp(self):
+    def cleanup(self):
         for ref in self.process_ref:
             ref.terminate()
         print("All services terminated!")
@@ -83,10 +83,11 @@ if __name__ == "__main__":
         demo = demo()
         demo.start_all_services()
         demo.simulate_user_operations()
-        demo.cleanUp()
+        demo.cleanup()
     except ConnectionRefusedError as e:
-        print ("Connection refused. Try it again")
-        demo.cleanUp()
-    except :
+        print("Connection refused. Try it again")
+        demo.cleanup()
+    except Exception as e:
+        print(e)
         print("Unexpected exception! Check logic")
-        demo.cleanUp()
+        demo.cleanup()
