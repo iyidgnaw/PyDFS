@@ -1,4 +1,5 @@
 import os
+import time
 from multiprocessing import Process
 
 from client import client
@@ -79,15 +80,15 @@ class demo:
 
 if __name__ == "__main__":
     # TODO: extract all hard coded value out
+
+    demo_obj = demo()
     try:
-        demo = demo()
-        demo.start_all_services()
-        demo.simulate_user_operations()
-        demo.cleanup()
-    except ConnectionRefusedError as e:
-        print("Connection refused. Try it again")
-        demo.cleanup()
+        demo_obj.start_all_services()
+        # race condition.
+        time.sleep(1)
+        demo_obj.simulate_user_operations()
+        demo_obj.cleanup()
     except Exception as e:
         print(e)
         print("Unexpected exception! Check logic")
-        demo.cleanup()
+        demo_obj.cleanup()
