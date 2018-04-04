@@ -6,8 +6,7 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 from utils import LOG_DIR
 
-# default listening port to 2130 if environment PORT undefined.
-from conf import default_proxy_port
+from conf import default_proxy_port, default_master_port
 
 
 class ProxyService(rpyc.Service):
@@ -22,7 +21,8 @@ class ProxyService(rpyc.Service):
         def check_con(self):
             # TODO disconnection handling
             if not self.__class__.master_con:
-                self.__class__.master_con = rpyc.connect("localhost", port=2131)
+                self.__class__.master_con = \
+                    rpyc.connect("127.0.0.1", port=default_master_port)
 
 
 def startProxyService():

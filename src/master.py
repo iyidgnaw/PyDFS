@@ -4,6 +4,7 @@ import os
 import pickle
 import random
 import sys
+import signal
 import uuid
 from threading import Thread
 from time import sleep
@@ -160,6 +161,7 @@ class MasterService(rpyc.Service):
                 self.flush_attr_entry('block_mapping', block_id)
                 self.flush_attr_entry('minion_content', target_mid)
 
+        # current state of minion cluster
         def exposed_health_report(self):
             if not self.__class__.health_monitoring:
                 Thread(target=self.health_monitor).start()
@@ -293,7 +295,7 @@ def startMasterService(minion_ports, master_port):
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
     set_conf(minion_ports)
-    # signal.signal(signal.SIGINT, int_handler)
+    signal.signal(signal.SIGINT, int_handler)
     t = ThreadedServer(MasterService, port=master_port)
     t.start()
 
