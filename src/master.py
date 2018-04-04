@@ -5,44 +5,49 @@ import pickle
 import random
 import sys
 import uuid
-from time import sleep
 from threading import Thread
+from time import sleep
 
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
+from conf import block_size, replication_factor, \
+    default_minion_ports, default_master_port
 from utils import LOG_DIR
 
-from conf import block_size, replication_factor, minions_conf
-
-MASTER_PORT = 2131
 
 # Issue: State related functions may not work correctly after the Master
 # definition changed.
 def get_state():
     return {'file_table': MasterService.exposed_Master.file_table, \
-         'block_mapping': MasterService.exposed_Master.block_mapping}
+            'block_mapping': MasterService.exposed_Master.block_mapping}
+
 
 def set_state(state):
     MasterService.exposed_Master.file_table = state['file_table']
     MasterService.exposed_Master.block_mapping = state['block_mapping']
 
+
 def int_handler(sig, frame):
     pickle.dump(get_state(), open('fs.img', 'wb'))
     sys.exit(0)
 
-def set_conf():
+
+def set_conf(minion_ports):
     # load and use conf file, restore from dump if possible.
     master = MasterService.exposed_Master
     master.block_size = block_size
     master.replication_factor = replication_factor
-    for mid, loc in minions_conf.items():
-        host, port = loc.split(":")
-        master.minions[mid] = (host, port)
-        master.minion_content[mid] = []
 
-    assert len(minions_conf) >= master.replication_factor,\
-        'not enough minions to hold {} replications'.format(\
+    for index, minion_port in enumerate(minion_ports):
+        # It is ok to do so because we only test locally
+        host = "127.0.0.1"
+        port = minion_port
+        master.minions[index + 1] = (host, port)
+        master.minion_content[index + 1] = []
+
+    assert len(minion_ports) >= master.replication_factor, \
+        'not enough minions to hold {} replications'.format( \
             master.replication_factor)
 
     # if found saved image of master, restore master state.
@@ -52,6 +57,7 @@ def set_conf():
     logging.info("Block size: %d, replication_faction: %d, minions: %s",
                  master.block_size, master.replication_factor,
                  str(master.minions))
+
 
 class MasterService(rpyc.Service):
     class exposed_Master(object):
@@ -114,6 +120,7 @@ class MasterService(rpyc.Service):
             # peacefully (intentionally) delete minion
             # where deleted minion's data gets replicated.
             self.exposed_replicate(mid)
+
             # host, port = self.__class__.minions[mid]
             # con = rpyc.connect(host, port=port)
             # minion = con.root.Minion()
@@ -144,7 +151,7 @@ class MasterService(rpyc.Service):
                 locations = self.__class__.block_mapping[block_id]
                 source_mid = random.choice([x for x in locations if x != mid])
                 target_mid = random.choice([x for x in self.__class__.minions if
-                    x not in locations])
+                                            x not in locations])
                 # Replicate block from source to target
                 self.replicate_block(block_id, source_mid, target_mid)
                 # Update information registered on Master
@@ -170,9 +177,9 @@ class MasterService(rpyc.Service):
             # update given attribute using the given update dict
             attr.update(attr_value)
 
-###############################################################################
+        ###################################
         # Private functions
-###############################################################################
+        ###################################
         # DEBUG USE ONLY
         # def exposed_eval_this(self, statement):
         #     eval(statement)
@@ -180,7 +187,6 @@ class MasterService(rpyc.Service):
         def masters_delete(self, fname):
             for m in self.get_master_siblings():
                 m.delete(fname)
-
 
         def flush(self, table, entry_key, wipe):
             # flush one entry in the given attr table to other masters
@@ -232,7 +238,7 @@ class MasterService(rpyc.Service):
             return blocks
 
         def calc_num_blocks(self, size):
-            return int(math.ceil(float(size)/self.__class__.block_size))
+            return int(math.ceil(float(size) / self.__class__.block_size))
 
         def minion_lost_handler(self, status):
             # TODO
@@ -246,7 +252,6 @@ class MasterService(rpyc.Service):
                 if not all(minions_status.values()):
                     self.minion_lost_handler(minions_status)
                 sleep(.1)
-
 
         def health_check(self):
             # reach out to known minions on file
@@ -271,7 +276,6 @@ class MasterService(rpyc.Service):
             minion = con.root.Minion()
             minion.replicate(block_id, target_host, target_port)
 
-
         def wipe(self, fname):
             for block_uuid in self.__class__.file_table[fname]:
                 node_ids = self.__class__.block_mapping[block_uuid]
@@ -282,15 +286,18 @@ class MasterService(rpyc.Service):
                     minion.delete(block_uuid)
             return
 
-def startMasterService():
+
+def startMasterService(minion_ports, master_port):
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
-                       format='%(asctime)s--%(levelname)s:%(message)s',
-                       datefmt='%m/%d/%Y %I:%M:%S %p',
-                       level=logging.DEBUG)
-    set_conf()
+                        format='%(asctime)s--%(levelname)s:%(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
+    set_conf(minion_ports)
     # signal.signal(signal.SIGINT, int_handler)
-    t = ThreadedServer(MasterService, port=2131)
+    t = ThreadedServer(MasterService, port=master_port)
     t.start()
 
+
 if __name__ == "__main__":
-    startMasterService()
+    # by default use config.py
+    startMasterService(default_minion_ports, default_master_port)

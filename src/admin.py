@@ -1,12 +1,11 @@
 import sys
 import rpyc
-from master import MASTER_PORT
-
+from conf import default_master_port
 ###############################################################################
        # Connection
 ###############################################################################
 try:
-    Connection = rpyc.connect("localhost", port=MASTER_PORT)
+    Connection = rpyc.connect("localhost", port=default_master_port)
     Master = Connection.root.Master()
 except ConnectionRefusedError:
     print('Failed to connect to Master.')

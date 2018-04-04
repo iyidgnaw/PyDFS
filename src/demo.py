@@ -1,8 +1,10 @@
 import os
 import time
+import socket
 from multiprocessing import Process
 
 from client import client
+from conf import default_minion_ports, default_proxy_port, default_master_port
 from master import startMasterService
 from minion import startMinionService
 from proxy import startProxyService
@@ -17,9 +19,12 @@ def generate_file(path, data):
 
 
 class demo:
-    def __init__(self):
+    def __init__(self, minion_ports, master_port, proxy_port):
         # this var hold reference to all process services
         self.process_ref = []
+        self.minion_ports = minion_ports
+        self.master_port = master_port
+        self.proxy_port = proxy_port
 
     def activate_minion(self, minion_port):
         p = Process(target=startMinionService, args=(minion_port,))
@@ -31,24 +36,27 @@ class demo:
         p.start()
         self.process_ref.append(p)
 
-    def activate_master(self, ):
-        p = Process(target=startMasterService, args=())
+    def activate_master(self, minion_ports, master_port):
+        p = Process(target=startMasterService, args=(minion_ports, master_port))
         p.start()
         self.process_ref.append(p)
 
     def start_all_services(self):
-        self.activate_minion(8888)
-        self.activate_minion(8889)
-        self.activate_minion(8890)
+
+        # minion only knows minion port
+        for minion_port in self.minion_ports:
+            self.activate_minion(minion_port)
 
         # start proxy
+        # proxy should know master ports
         self.activate_proxy()
 
         # start master
-        self.activate_master()
+        # master should know all minion ports
+        self.activate_master(self.minion_ports, self.master_port)
 
     def simulate_user_operations(self):
-        client_service = client(2130)
+        client_service = client(self.proxy_port)
 
         # Generate a file with some data
         path = './sample.txt'
@@ -80,15 +88,17 @@ class demo:
 
 if __name__ == "__main__":
     # TODO: extract all hard coded value out
-
-    demo_obj = demo()
+    demo_obj = None
     try:
+        demo_obj = demo(default_minion_ports,
+                        default_master_port, default_proxy_port)
+
         demo_obj.start_all_services()
         # race condition.
         time.sleep(1)
         demo_obj.simulate_user_operations()
         demo_obj.cleanup()
-    except Exception as e:
+    except socket.error as e:
         print(e)
         print("Unexpected exception! Check logic")
         demo_obj.cleanup()

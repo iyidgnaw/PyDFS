@@ -7,7 +7,7 @@ from rpyc.utils.server import ThreadedServer
 from utils import LOG_DIR
 
 # default listening port to 2130 if environment PORT undefined.
-from conf import PROXY_PORT
+from conf import default_proxy_port
 
 
 class ProxyService(rpyc.Service):
@@ -30,7 +30,7 @@ def startProxyService():
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-    t = ThreadedServer(ProxyService, port=PROXY_PORT)
+    t = ThreadedServer(ProxyService, port=default_proxy_port)
     t.start()
 
 if __name__ == "__main__":

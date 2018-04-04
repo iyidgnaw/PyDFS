@@ -1,6 +1,11 @@
+# This file contains all default configuration for all components to read from
+# Note: this is the single source of truth about the whole system.
+
+# Master server configuration
 block_size = 10
 replication_factor = 2
-minions_conf = {1: '127.0.0.1:8888',
-                2: '127.0.0.1:8889',
-                3: '127.0.0.1:8890'}
-PROXY_PORT = 2130
+
+# Default values for starting all services
+default_minion_ports = [8888, 8889, 8890]
+default_proxy_port = 2130
+default_master_port = 2131
