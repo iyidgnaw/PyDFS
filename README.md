@@ -18,19 +18,18 @@ $ python client.py get sometxt
 ##### Stop it using Ctll + C so that it will dump the namespace.
 
 ## TODO:
-  - Use better algo for minion selection to put a block (currently random)
-  - Dump namespace periodically (check-pointing)
-  - Minion heartbeats / Block reports (on which Luke is working)
-  - Add entry in namespace only after write succeeds
-  - Use proper datastructure(tree-like eg. treedict) to store namespace(currently simple dict)
-  - Admin api and user interface (Luke)
-  - ~~Delete/Add minion node~~ (diyi)
-  - ~~Block integrity check~~ (diyi)
-  - Logging issue in minion service
-  - Test coverage (put, get, delete) in python script(xinwen) 
-    - Check the result after every operation
-    - List all supported test case.
-  - Expand this TODO
+    Priority:
+      - Minion heartbeats / Block reports (on which Luke is working)
+      - Add entry in namespace only after write succeeds
+      - Admin api and user interface (Luke)
+      - ~~Delete/Add minion node~~ (diyi)
+      - ~~Block integrity check~~ (diyi)
+      - ~~Logging issue in minion service~~ (xinwen)
+
+    Optional:
+      - Use better algo for minion selection to put a block (currently random)
+      - Dump namespace periodically (check-pointing)
+      - Use proper datastructure(tree-like eg. treedict) to store namespace(currently simple dict)
 
 ### Dev
 
