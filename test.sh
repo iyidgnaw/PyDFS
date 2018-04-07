@@ -33,6 +33,7 @@ fi
 python3 minion.py 8888&
 python3 minion.py 8889&
 python3 minion.py 8890&
+python3 minion.py 8891&
 if [[ $? -ne 0 ]]; then
   echo "Minions fireup failed!"
   clean
