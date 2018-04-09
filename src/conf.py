@@ -9,3 +9,5 @@ replication_factor = 3
 default_minion_ports = [8888, 8889, 8890, 8891]
 default_proxy_port = 2130
 default_master_port = 2131
+
+other_masters = [2132, 2133]

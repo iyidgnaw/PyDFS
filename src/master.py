@@ -4,7 +4,6 @@ import os
 import pickle
 import random
 import sys
-import signal
 import uuid
 from threading import Thread
 from time import sleep
@@ -298,7 +297,18 @@ def startMasterService(minion_ports, master_port):
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
     set_conf(minion_ports)
-    signal.signal(signal.SIGINT, int_handler)
+    # signal.signal(signal.SIGINT, int_handler)
+    t = ThreadedServer(MasterService, port=master_port)
+    t.start()
+
+
+def startMasterService_no_minion(master_port):
+    logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
+                        format='%(asctime)s--%(levelname)s:%(message)s',
+                        datefmt='%m/%d/%Y %I:%M:%S %p',
+                        level=logging.DEBUG)
+    set_conf([])
+    # signal.signal(signal.SIGINT, int_handler)
     t = ThreadedServer(MasterService, port=master_port)
     t.start()
 

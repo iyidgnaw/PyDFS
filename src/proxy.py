@@ -8,7 +8,7 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 from utils import LOG_DIR
 
-from conf import default_proxy_port, default_master_port
+from conf import default_proxy_port, default_master_port, other_masters
 
 
 class ProxyService(rpyc.Service):
@@ -98,13 +98,23 @@ class ProxyService(rpyc.Service):
                 Thread(target=master_update, args=(master,)).start()
 
 
-def startProxyService(proxy_port):
+# def set_conf(master_ports):
+#     proxy = ProxyService.exposed_Proxy
+#
+#     for master_port in master_ports:
+#         proxy.master_list.append(master_port)
+
+
+
+def startProxyService(proxy_port, master_ports):
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'proxy'),
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
+    # set_conf(master_ports)
+
     t = ThreadedServer(ProxyService, port=proxy_port)
     t.start()
 
 if __name__ == "__main__":
-    startProxyService(default_proxy_port)
+    startProxyService(default_proxy_port, other_masters)
