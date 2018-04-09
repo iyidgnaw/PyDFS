@@ -76,8 +76,7 @@ class MasterService(rpyc.Service):
         minions = {}
 
         # mid to (host,port) mapping
-        master_cluter = {}
-        mas_id = None
+        master_list = []
 
         block_size = 0
         replication_factor = 0
@@ -179,6 +178,11 @@ class MasterService(rpyc.Service):
             # update given attribute using the given update dict
             attr.update(attr_value)
 
+        def exposed_update_masters(self, M):
+            # M is the new master list
+            self.__class__.master_list = M
+
+
         ###################################
         # Private functions
         ###################################
@@ -211,15 +215,14 @@ class MasterService(rpyc.Service):
             Thread(target=self.flush, args=[table, None, True]).start()
 
         def get_master_siblings(self):
-            for mas_id, (host, port) in self.__class__.master_cluter.items():
-                if mas_id == self.__class__.mas_id:
-                    continue
+            for (host, port) in self.__class__.master_list:
                 try:
                     con = rpyc.connect(host, port)
                     m = con.root.Master()
                     yield m
                 except ConnectionRefusedError:
-                    self.master_lost_handler(mas_id)
+                    # do nothing
+                    # master does not notify proxy for missing siblings
                     continue
 
         def alloc_blocks(self, dest, num):
