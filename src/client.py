@@ -1,8 +1,10 @@
 import os
 import sys
+
 import rpyc
 
 from conf import default_proxy_port
+
 
 class client:
     # client needs to know proxy's port
@@ -12,7 +14,7 @@ class client:
         self.master = self.proxy.get_master()
 
     def send_to_minion(self, block_uuid, data, minions):
-        print("sending: " + str(block_uuid) + str(minions))
+        print("[Client] sending: " + str(block_uuid) + str(minions))
         main_minion, *replicate_minions = minions
         host, port = main_minion
 
@@ -48,7 +50,7 @@ class client:
         # get allocation scheme from master through proxy
         file_table = self.master.read(fname)
         if not file_table:
-            print("404: file not found")
+            print("[Client] get file name [" + fname+ "]:" + "file not found")
             return ''
 
         # result holding file content
@@ -57,10 +59,11 @@ class client:
         for block_uuid, node_ids in file_table:
             minions = self.master.get_minions(node_ids)
             result += self.read_from_minions(block_uuid, minions)
+        print("[Client] get file name [" + fname + "]:" + result)
         return result
 
-
     def put(self, source, dest):
+        print("[Client] put:" + source + " as: " + dest)
         size = os.path.getsize(source)
         # get allocation scheme from master through proxy
         blocks = self.master.write(dest, size)
@@ -75,6 +78,7 @@ class client:
                     break
 
     def delete(self, fname):
+        print("[Client] delete:" + fname)
         file_table = self.master.read(fname)
         if not file_table:
             print("404: file not found")

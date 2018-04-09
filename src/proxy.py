@@ -7,7 +7,7 @@ import rpyc
 from rpyc.utils.server import ThreadedServer
 from utils import LOG_DIR
 
-from conf import default_proxy_port, default_master_port
+from conf import default_proxy_port, default_master_port, other_masters
 
 
 class ProxyService(rpyc.Service):
@@ -24,7 +24,7 @@ class ProxyService(rpyc.Service):
 
         def exposed_delete_master(self, m):
             if m == self.current_master():
-                recover_master()
+                self.recover_master()
             if m in self.__class__.master_list:
                 self.__class__.master_list.remove(m)
             if m in self.__class__.master_back_list:
@@ -71,13 +71,23 @@ class ProxyService(rpyc.Service):
                     self.recover_master()
             logging.info('Failed to obtain connection to all/any master!')
 
-def startProxyService(proxy_port):
+# def set_conf(master_ports):
+#     proxy = ProxyService.exposed_Proxy
+#
+#     for master_port in master_ports:
+#         proxy.master_list.append(master_port)
+
+
+
+def startProxyService(proxy_port, master_ports):
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'proxy'),
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
+    # set_conf(master_ports)
+
     t = ThreadedServer(ProxyService, port=proxy_port)
     t.start()
 
 if __name__ == "__main__":
-    startProxyService(default_proxy_port)
+    startProxyService(default_proxy_port, other_masters)
