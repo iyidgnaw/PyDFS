@@ -44,8 +44,8 @@ fi
 sleep 1
 
 # Create file with test msg
-TEST_MSG="Put and Get are all green!"
-NOT_FOUND_MSG="404: file not found"
+TEST_MSG="TEST MESSAGE"
+NOT_FOUND_MSG="file not found"
 echo $TEST_MSG > tmp.txt
 
 ###############################################################################
@@ -63,7 +63,7 @@ fi
 ###############################################################################
 output=$(python3 client.py get tmp)
 echo $output
-if [[ $output != $TEST_MSG  ]]; then
+if [[ $output != "[Client] get file name [tmp]:$TEST_MSG" ]]; then
   echo "GET operation failed!"
   clean
   exit 1
@@ -77,7 +77,7 @@ python3 client.py delete tmp
 # Try Get
 output=$(python3 client.py get tmp)
 echo $output
-if [[ $output != $NOT_FOUND_MSG ]]; then
+if [[ $output != "[Client] get file name [tmp]:$NOT_FOUND_MSG" ]]; then
   echo "Delete operation failed!"
   clean
   exit 1

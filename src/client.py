@@ -96,7 +96,7 @@ class client:
 def main(args):
     client_service = client(default_proxy_port)
     if args[0] == "get":
-        sys.stdout.write(client_service.get(args[1]))
+        client_service.get(args[1])
     elif args[0] == "put":
         client_service.put(args[1], args[2])
     elif args[0] == "delete":

@@ -33,9 +33,7 @@ class ProxyService(rpyc.Service):
         def current_master(self):
             if self.__class__.master_list:
                 return self.__class__.master_list[0]
-            else:
-                None
-
+            return None
 
         def exposed_get_master(self):
             # return connection to master, MAYBE RETURN None.
