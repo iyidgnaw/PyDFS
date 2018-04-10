@@ -12,10 +12,12 @@ DATA_DIR = "/tmp/minion/"
 
 class MinionService(rpyc.Service):
     class exposed_Minion(object):
-        blocks = {}
-        # To test the project on several port on single machine, we need to
-        # differ the file_name saved.
-        m_uuid = str(uuid.uuid4())
+        block = None
+        m_uuid = None
+        def __init__(self):
+            if not self.__class__.block and not self.__class__.m_uuid:
+                self.__class__.blocks = {}
+                self.__class__.m_uuid = str(uuid.uuid4())
 
         def exposed_put(self, block_uuid, data, minions):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
