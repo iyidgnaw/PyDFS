@@ -6,9 +6,7 @@ import uuid
 import rpyc
 
 from rpyc.utils.server import ThreadedServer
-from utils import LOG_DIR
-
-DATA_DIR = "/tmp/minion/"
+from conf import LOG_DIR, DATA_DIR
 
 class MinionService(rpyc.Service):
     class exposed_Minion(object):
@@ -27,7 +25,7 @@ class MinionService(rpyc.Service):
                 if size != len(data):
                     return 1
 
-            logging.info("PUT: %s", block_uuid)
+            logging.info('PUT: %s', block_uuid)
             if minions:
                 self.forward(block_uuid, data, minions)
             return 0
@@ -39,7 +37,7 @@ class MinionService(rpyc.Service):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
             if not os.path.isfile(block_addr):
                 return None
-            logging.info("GET: %s", block_uuid)
+            logging.info('GET: %s', block_uuid)
             with open(block_addr, 'r') as f:
                 return f.read()
 
@@ -47,7 +45,7 @@ class MinionService(rpyc.Service):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
             if os.path.isfile(block_addr):
                 os.remove(block_addr)
-            logging.info("DELETE: %s", block_uuid)
+            logging.info('DELETE: %s', block_uuid)
 
         def exposed_replicate(self, block_uuid, host, port):
             block_addr = DATA_DIR + str(self.__class__.m_uuid) + str(block_uuid)
@@ -69,7 +67,7 @@ class MinionService(rpyc.Service):
         # TODO: The next step would be how to effectively handle the failure
         # during the forwarding.
         def forward(self, block_uuid, data, minions):
-            logging.info("8888: forwarding %s to:%s", block_uuid, str(minions))
+            logging.info('8888: forwarding %s to:%s', block_uuid, str(minions))
             for minion in minions:
                 t = threading.Thread(target=self.forward_worker,
                         args=(block_uuid, data, minion,))
@@ -91,8 +89,8 @@ def startMinionService(server_port):
     t = ThreadedServer(MinionService, port=server_port)
     t.start()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("You need to specify the port number")
+        print('You need to specify the port number')
     minion_port = int(sys.argv[1])
     startMinionService(minion_port)

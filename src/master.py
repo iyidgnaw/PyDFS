@@ -1,9 +1,7 @@
 import logging
 import math
 import os
-import pickle
 import random
-import sys
 import uuid
 from threading import Thread
 from time import sleep
@@ -11,64 +9,20 @@ from time import sleep
 import rpyc
 from rpyc.utils.server import ThreadedServer
 
-from conf import block_size, replication_factor, \
-    default_minion_ports, default_master_port
-from utils import LOG_DIR
-
-
-# Issue: State related functions may not work correctly after the Master
-# definition changed.
-def get_state():
-    return {'file_table': MasterService.exposed_Master.file_table, \
-            'block_mapping': MasterService.exposed_Master.block_mapping}
-
-
-def set_state(state):
-    MasterService.exposed_Master.file_table = state['file_table']
-    MasterService.exposed_Master.block_mapping = state['block_mapping']
-
-
-def int_handler(sig, frame):
-    pickle.dump(get_state(), open('fs.img', 'wb'))
-    sys.exit(0)
-
-
-def set_conf(minion_ports):
-    # load and use conf file, restore from dump if possible.
-    master = MasterService.exposed_Master
-    master.block_size = block_size
-    master.replication_factor = replication_factor
-
-    for index, minion_port in enumerate(minion_ports):
-        # It is ok to do so because we only test locally
-        host = "127.0.0.1"
-        port = minion_port
-        master.minions[index + 1] = (host, port)
-        master.minion_content[index + 1] = []
-
-    assert len(minion_ports) >= master.replication_factor, \
-        'not enough minions to hold {} replications'.format( \
-            master.replication_factor)
-
-    # if found saved image of master, restore master state.
-    if os.path.isfile('fs.img'):
-        set_state(pickle.load(open('fs.img', 'rb')))
-    logging.info("Current Config:")
-    logging.info("Block size: %d, replication_faction: %d, minions: %s",
-                 master.block_size, master.replication_factor,
-                 str(master.minions))
+from conf import BLOCK_SIZE, REPLICATION_FACTOR, \
+    DEFAULT_MINION_PORTS, DEFAULT_MASTER_PORTS, LOG_DIR
 
 
 class MasterService(rpyc.Service):
     class exposed_Master(object):
         # Map file_name to block_ids
-        # {"file_name": [bid1, bid2, bid3]
+        # {'file_name': [bid1, bid2, bid3]
         file_table = {}
         # Map block_id to where it's saved
-        # {"bid": [mid1, mid2, mid3]}
+        # {'bid': [mid1, mid2, mid3]}
         block_mapping = {}
         # Map mid to what's saved on it
-        # {"mid": [bid1, bid2, bid3]}
+        # {'mid': [bid1, bid2, bid3]}
         minion_content = {}
         # Register the information of every minion
         # TODO: Merge 'minions' and 'minion_content'
@@ -169,7 +123,7 @@ class MasterService(rpyc.Service):
 
         def exposed_update_attr(self, attr_info, wipe_original=False):
             # update_attr is used by self.flush method.
-            # "attr_info" is a tuple: (attr_name, attr_value)
+            # 'attr_info' is a tuple: (attr_name, attr_value)
             attr_name, attr_value = attr_info
             attr = getattr(self.__class__, attr_name)
             assert isinstance(attr, dict) and isinstance(attr_value, dict)
@@ -178,9 +132,9 @@ class MasterService(rpyc.Service):
             # update given attribute using the given update dict
             attr.update(attr_value)
 
-        ###################################
+###############################################################################
         # Private functions
-        ###################################
+###############################################################################
         # DEBUG USE ONLY
         # def exposed_eval_this(self, statement):
         #     eval(statement)
@@ -197,8 +151,8 @@ class MasterService(rpyc.Service):
             # if 'wipe' flag is on, it means that the entire table is flushed
             update_dict[table] = attr if wipe else {entry_key: attr[entry_key]}
 
-            # "Yo, master brothers and sisters:
-            #  this `table[entry_key]` got updated, I'm updating you guys."
+            # 'Yo, master brothers and sisters:
+            #  this `table[entry_key]` got updated, I'm updating you guys.'
             # TODO: parallel this.
             for m in self.get_master_siblings():
                 m.update_attr(update_dict, wipe_original=wipe)
@@ -288,28 +242,38 @@ class MasterService(rpyc.Service):
             return
 
 
-def startMasterService(minion_ports, master_port):
+def startMasterService(minion_ports=DEFAULT_MINION_PORTS,
+                       master_port=DEFAULT_MASTER_PORTS[0],
+                       block_size=BLOCK_SIZE,
+                       replication_factor=REPLICATION_FACTOR):
     logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
                         format='%(asctime)s--%(levelname)s:%(message)s',
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
-    set_conf(minion_ports)
-    # signal.signal(signal.SIGINT, int_handler)
+    # load and use conf file, restore from dump if possible.
+    master = MasterService.exposed_Master
+    master.block_size = block_size
+    master.replication_factor = replication_factor
+
+    for index, minion_port in enumerate(minion_ports):
+        # It is ok to do so because we only test locally
+        host = '127.0.0.1'
+        port = minion_port
+        master.minions[index + 1] = (host, port)
+        master.minion_content[index + 1] = []
+
+    assert len(minion_ports) >= master.replication_factor, \
+        'not enough minions to hold {} replications'.format( \
+            master.replication_factor)
+
+    logging.info('Current Config:')
+    logging.info('Block size: %d, replication_faction: %d, minions: %s',
+                 master.block_size, master.replication_factor,
+                 str(master.minions))
     t = ThreadedServer(MasterService, port=master_port)
     t.start()
 
 
-def startMasterService_no_minion(master_port):
-    logging.basicConfig(filename=os.path.join(LOG_DIR, 'master'),
-                        format='%(asctime)s--%(levelname)s:%(message)s',
-                        datefmt='%m/%d/%Y %I:%M:%S %p',
-                        level=logging.DEBUG)
-    set_conf([])
-    # signal.signal(signal.SIGINT, int_handler)
-    t = ThreadedServer(MasterService, port=master_port)
-    t.start()
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     # by default use config.py
-    startMasterService(default_minion_ports, default_master_port)
+    startMasterService()
