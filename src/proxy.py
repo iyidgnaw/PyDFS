@@ -28,18 +28,18 @@ class ProxyService(rpyc.Service):
                 self.__class__.master_list.remove(m)
             if m in self.__class__.master_back_list:
                 self.__class__.master_back_list.remove(m)
-################################################################################
-        # Private functions
-################################################################################
-        def current_master(self):
-            if self.__class__.master_list:
-                return self.__class__.master_list[0]
-            return None
 
         def exposed_get_master(self):
             # return connection to master, MAYBE RETURN None.
             if self.check_con():
                 return self.__class__.master_con.root.Master()
+            return None
+#########################################################################
+        # Private functions
+################################################################################
+        def current_master(self):
+            if self.__class__.master_list:
+                return self.__class__.master_list[0]
             return None
 
         def check_con(self):

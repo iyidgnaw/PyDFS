@@ -5,7 +5,7 @@ import rpyc
 
 from conf import DEFAULT_PROXY_PORT
 
-class client:
+class Client:
     def __init__(self, proxy_port_num):
         self.con = rpyc.connect('localhost', proxy_port_num)
         self.proxy = self.con.root.Proxy()
@@ -81,7 +81,7 @@ class client:
 
 
 def main(args):
-    client_service = client(DEFAULT_PROXY_PORT)
+    client_service = Client(DEFAULT_PROXY_PORT)
     if args[0] == 'get':
         client_service.get(args[1])
     elif args[0] == 'put':

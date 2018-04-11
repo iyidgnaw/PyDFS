@@ -8,6 +8,7 @@ from proxy import startProxyService
 ###############################################################################
 # there are some ADMIN APIs we might want to consider.
 
+default_pool = []
 def create_minion_node():
     pass
 
@@ -26,16 +27,22 @@ def create_master_node():
 def attach_master_node():
     pass
 
+def setupDefaultEnv():
+    default_pool.append(Process(target=startMasterService))
+    for port in DEFAULT_MINION_PORTS:
+        default_pool.append(Process(target=startMinionService, args=(port,)))
+    default_pool.append(Process(target=startProxyService))
+    for p in default_pool:
+        p.start()
+
+def tearDownDefaultEnv():
+    for p in default_pool:
+        p.terminate()
+
 def main(args):
     if not args:
         # Fireup everything accroding to conf.py
-        pool = []
-        pool.append(Process(target=startMasterService))
-        for port in DEFAULT_MINION_PORTS:
-            pool.append(Process(target=startMinionService, args=(port,)))
-        pool.append(Process(target=startProxyService))
-        for p in pool:
-            p.start()
+        setupDefaultEnv()
     else:
         pass
 
