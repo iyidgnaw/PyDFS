@@ -8,10 +8,10 @@ if [[ $? -ne 0 ]]; then
 fi
 
 # Functional Test
-#./test.sh
-#if [[ $? -ne 0 ]]; then
-#  echo "Commit Aborted. Functional Test Failed"
-#  exit 1
-#fi
+./test.sh
+if [[ $? -ne 0 ]]; then
+  echo "Commit Aborted. Functional Test Failed"
+  exit 1
+fi
 
 exit 0

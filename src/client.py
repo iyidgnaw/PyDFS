@@ -3,18 +3,16 @@ import sys
 
 import rpyc
 
-from conf import default_proxy_port
+from conf import DEFAULT_PROXY_PORT
 
-
-class client:
-    # client needs to know proxy's port
+class Client:
     def __init__(self, proxy_port_num):
         self.con = rpyc.connect('localhost', proxy_port_num)
         self.proxy = self.con.root.Proxy()
         self.master = self.proxy.get_master()
 
     def send_to_minion(self, block_uuid, data, minions):
-        print("[Client] sending: " + str(block_uuid) + str(minions))
+        print('[Client] Sending: ' + str(block_uuid) + str(minions))
         main_minion, *replicate_minions = minions
         host, port = main_minion
 
@@ -35,7 +33,7 @@ class client:
                 return self.read_from_minion(block_uuid, minion)
             except ConnectionRefusedError:
                 continue
-        print("No blocks found. Possibly a corrupt file")
+        print('[Client] No blocks found. Possibly a corrupt file')
         return ''
 
     def delete_from_minion(self, block_uuid, minion):
@@ -44,44 +42,36 @@ class client:
         minion = con.root.Minion()
         return minion.delete(block_uuid)
 
-    # Client public API : get, put, delete
-
     def get(self, fname):
-        # get allocation scheme from master through proxy
         file_table = self.master.read(fname)
         if not file_table:
-            print("[Client] get file name [" + fname+ "]:" + "file not found")
+            print('[Client] File Not Found')
             return ''
 
-        # result holding file content
         result = ''
-        # connect each minion to get file content
         for block_uuid, node_ids in file_table:
             minions = self.master.get_minions(node_ids)
             result += self.read_from_minions(block_uuid, minions)
-        print("[Client] get file name [" + fname + "]:" + result)
+        print('[Client] Get from {}: {}'.format(fname, result))
         return result
 
     def put(self, source, dest):
-        print("[Client] put:" + source + " as: " + dest)
+        print('[Client] Put into {}: {}'.format(dest, source))
         size = os.path.getsize(source)
-        # get allocation scheme from master through proxy
         blocks = self.master.write(dest, size)
-        # open the source file
         with open(source) as f:
-            # send by blocks
             for block_uuid, node_ids in blocks:
                 data = f.read(self.master.get_block_size())
                 minions = self.master.get_minions(node_ids)
                 if self.send_to_minion(block_uuid, data, minions):
-                    print("Put Operation failed.")
+                    print('Put Operation failed.')
                     break
 
     def delete(self, fname):
-        print("[Client] delete:" + fname)
+        print('[Client] Delete: {}'.format(fname))
         file_table = self.master.read(fname)
         if not file_table:
-            print("404: file not found")
+            print('[Client] File Not Found')
             return
 
         self.master.delete(fname)
@@ -89,23 +79,18 @@ class client:
             for m in self.master.get_minions(node_ids):
                 self.delete_from_minion(block_uuid, m)
 
-    def backup(self, mid):
-        self.master.replicate(int(mid))
-
 
 def main(args):
-    client_service = client(default_proxy_port)
-    if args[0] == "get":
-        sys.stdout.write(client_service.get(args[1]))
-    elif args[0] == "put":
+    client_service = Client(DEFAULT_PROXY_PORT)
+    if args[0] == 'get':
+        client_service.get(args[1])
+    elif args[0] == 'put':
         client_service.put(args[1], args[2])
-    elif args[0] == "delete":
+    elif args[0] == 'delete':
         client_service.delete(args[1])
-    elif args[0] == "backup":
-        client_service.backup(args[1])
     else:
-        print("try 'put srcFile destFile OR get file'")
+        print('Please specify the operation you want')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main(sys.argv[1:])

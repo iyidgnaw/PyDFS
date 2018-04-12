@@ -8,6 +8,7 @@ clean(){
   pkill -f master.py
   pkill -f minion.py
   pkill -f proxy.py
+  pkill -f admin.py
   rm -f tmp.txt
   rm -f fs.img
 }
@@ -17,35 +18,17 @@ clean(){
 
 cd src
 clean
-# Bring up master and minions
-python3 master.py &
+# Fireup default test env
+python3 admin.py&
 if [[ $? -ne 0 ]]; then
-  echo "Master fireup failed!"
+  echo "Failed to fireup the test env. Please debug separtely!"
   exit 1
 fi
-
-python3 proxy.py &
-if [[ $? -ne 0 ]]; then
-  echo "Proxy fireup failed!"
-  exit 1
-fi
-
-python3 minion.py 8888&
-python3 minion.py 8889&
-python3 minion.py 8890&
-python3 minion.py 8891&
-if [[ $? -ne 0 ]]; then
-  echo "Minions fireup failed!"
-  clean
-  exit 1
-fi
-
-# Wait for server and minion
-sleep 1
+sleep 3
 
 # Create file with test msg
-TEST_MSG="Put and Get are all green!"
-NOT_FOUND_MSG="404: file not found"
+TEST_MSG="TEST MESSAGE"
+NOT_FOUND_MSG="[Client] File Not Found"
 echo $TEST_MSG > tmp.txt
 
 ###############################################################################
@@ -63,7 +46,7 @@ fi
 ###############################################################################
 output=$(python3 client.py get tmp)
 echo $output
-if [[ $output != $TEST_MSG  ]]; then
+if [[ $output != "[Client] Get from tmp: $TEST_MSG" ]]; then
   echo "GET operation failed!"
   clean
   exit 1
@@ -77,7 +60,7 @@ python3 client.py delete tmp
 # Try Get
 output=$(python3 client.py get tmp)
 echo $output
-if [[ $output != $NOT_FOUND_MSG ]]; then
+if [[ $output != "$NOT_FOUND_MSG" ]]; then
   echo "Delete operation failed!"
   clean
   exit 1
