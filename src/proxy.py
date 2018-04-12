@@ -72,8 +72,6 @@ class ProxyService(rpyc.Service):
                     self.recover_master()
             logging.info('Failed to obtain connection to all/any master!')
 
-<<<<<<< HEAD
-
         def current_master(self):
             if self.__class__.master_list:
                 return self.__class__.master_list[0]
@@ -101,16 +99,6 @@ class ProxyService(rpyc.Service):
             for master in self.__class__.master_list:
                 Thread(target=master_update, args=(master,)).start()
 
-
-# def set_conf(master_ports):
-#     proxy = ProxyService.exposed_Proxy
-#
-#     for master_port in master_ports:
-#         proxy.master_list.append(master_port)
-
-
-=======
->>>>>>> 6b3b7e03a6d2de0b971d3ded3289218d2ba2cb12
 
 def startProxyService(proxy_port=DEFAULT_PROXY_PORT,
                       master_list=DEFAULT_MASTER_PORTS):
