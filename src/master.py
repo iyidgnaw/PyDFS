@@ -5,6 +5,7 @@ import random
 import uuid
 from threading import Thread
 from time import sleep
+from copy import copy
 
 import rpyc
 from rpyc.utils.server import ThreadedServer
@@ -42,7 +43,16 @@ class MasterService(rpyc.Service):
             return None
 
         def exposed_delete(self, fname):
-            Thread(target=self.masters_delete, args=[fname]).start()
+            def siblings_delete(fname):
+                for (h, p) in self.__class__.master_list:
+                    try:
+                        m = rpyc.connect(h, p)
+                        m.root.Master().delete(fname)
+                    except ConnectionRefusedError:
+                        continue
+
+            Thread(target=siblings_delete, args=[fname]).start()
+
             for block_id in self.__class__.file_table[fname]:
                 for mid in self.__class__.block_mapping[block_id]:
                     self.__class__.minion_content[mid].remove(block_id)
@@ -50,6 +60,9 @@ class MasterService(rpyc.Service):
             del self.__class__.file_table[fname]
 
         def exposed_write(self, dest, size):
+            if len(self.__class__.minions) < self.__class__.replication_factor:
+                return 'not enough minions to hold {} replications'.format(\
+                    self.__class__.replication_factor)
             if self.exists(dest):
                 self.wipe(dest)
                 self.exposed_delete(dest)
@@ -78,8 +91,12 @@ class MasterService(rpyc.Service):
             # con = rpyc.connect(host, port=port)
             # minion = con.root.Minion()
             def sublings_delete_minion(mid):
-                for m in self.get_master_siblings():
-                    m.delete_minion(mid)
+                for (h, p) in self.__class__.master_list:
+                    try:
+                        m = rpyc.connect(h, p)
+                        m.root.Master().delete_minion(mid)
+                    except ConnectionRefusedError:
+                        continue
 
             self.exposed_delete_minion(mid)
             Thread(target=sublings_delete_minion, args=[mid]).start()
@@ -93,7 +110,10 @@ class MasterService(rpyc.Service):
             del self.__class__.minion_content[mid]
 
         def exposed_add_minion(self, host, port):
-            mid = max(self.__class__.minions) + 1
+            if not self.__class__.minions:
+                mid = 0
+            else:
+                mid = max(self.__class__.minions) + 1
             self.__class__.minions[mid] = (host, port)
             self.__class__.minion_content[mid] = []
             self.flush_attr_entry('minions', mid)
@@ -129,12 +149,24 @@ class MasterService(rpyc.Service):
             if wipe_original:
                 attr = {}
             # update given attribute using the given update dict
+            # print(attr_name, attr_value, attr)
             attr.update(attr_value)
 
         def exposed_update_masters(self, M):
             # M is the new master list
             self.__class__.master_list = M
 
+        def exposed_new_sibling(self, m):
+            # I, the primary master, was introduced to a new sibling
+            # I am going to flush all my data onto the new sibling
+            host, port = m
+            con = rpyc.connect(host, port)
+            sibling = con.root.Master()
+
+            for t in ('file_table', 'block_mapping',\
+                      'minion_content', 'minions'):
+                table = getattr(self.__class__, t)
+                sibling.update_attr((t, table), wipe_original=True)
 
 ###############################################################################
         # Private functions
@@ -143,9 +175,7 @@ class MasterService(rpyc.Service):
         # def exposed_eval_this(self, statement):
         #     eval(statement)
 
-        def masters_delete(self, fname):
-            for m in self.get_master_siblings():
-                m.delete(fname)
+        
 
         def flush(self, table, entry_key, wipe):
             # flush one entry in the given attr table to other masters
@@ -158,25 +188,18 @@ class MasterService(rpyc.Service):
             # 'Yo, master brothers and sisters:
             #  this `table[entry_key]` got updated, I'm updating you guys.'
             # TODO: parallel this.
-            for m in self.get_master_siblings():
-                m.update_attr(update_dict, wipe_original=wipe)
+            for (h, p) in self.__class__.master_list:
+                try:
+                    m = rpyc.connect(h, p)
+                    m.root.Master().update_attr(update_dict, wipe_original=wipe)
+                except ConnectionRefusedError:
+                    continue
 
         def flush_attr_entry(self, table, entry_key):
             Thread(target=self.flush, args=[table, entry_key, False]).start()
 
         def flush_attr_table(self, table):
             Thread(target=self.flush, args=[table, None, True]).start()
-
-        def get_master_siblings(self):
-            for (host, port) in self.__class__.master_list:
-                try:
-                    con = rpyc.connect(host, port)
-                    m = con.root.Master()
-                    yield m
-                except ConnectionRefusedError:
-                    # do nothing
-                    # master does not notify proxy for missing siblings
-                    continue
 
         def alloc_blocks(self, dest, num):
             blocks = []
@@ -258,16 +281,13 @@ def startMasterService(minion_ports=DEFAULT_MINION_PORTS,
     master.block_size = block_size
     master.replication_factor = replication_factor
 
-    for index, minion_port in enumerate(minion_ports):
+    # for index, minion_port in enumerate(minion_ports):
         # It is ok to do so because we only test locally
-        host = '127.0.0.1'
-        port = minion_port
-        master.minions[index + 1] = (host, port)
-        master.minion_content[index + 1] = []
+        # host = '127.0.0.1'
+        # port = minion_port
+        # master.minions[index + 1] = (host, port)
+        # master.minion_content[index + 1] = []
 
-    assert len(minion_ports) >= master.replication_factor, \
-        'not enough minions to hold {} replications'.format( \
-            master.replication_factor)
 
     logging.info('Current Config:')
     logging.info('Block size: %d, replication_faction: %d, minions: %s',

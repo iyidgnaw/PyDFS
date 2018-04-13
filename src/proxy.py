@@ -13,7 +13,7 @@ from conf import DEFAULT_PROXY_PORT, DEFAULT_MASTER_PORTS, LOG_DIR
 class ProxyService(rpyc.Service):
     class exposed_Proxy(object):
         master_con = None
-        master_list = None
+        master_list = []
         master_back_list = []
 
         def exposed_add_master(self, m):
@@ -38,11 +38,6 @@ class ProxyService(rpyc.Service):
 #########################################################################
         # Private functions
 ################################################################################
-        def current_master(self):
-            if self.__class__.master_list:
-                return self.__class__.master_list[0]
-            return None
-
         def check_con(self):
             # Return true if connection is okay
             if self.__class__.master_con:
@@ -53,7 +48,7 @@ class ProxyService(rpyc.Service):
                 self.__class__.master_con = rpyc.connect(host, port=port)
                 return True
             except ConnectionRefusedError:
-                self.recover_master()
+                Thread(target=recover_master).start()
                 return False
 
         def recover_master(self):
@@ -78,7 +73,7 @@ class ProxyService(rpyc.Service):
             return None
 
         def master_list_remove(self, m):
-            self.__class__.master_list.remove(self, m)
+            self.__class__.master_list.remove(m)
             self.flush_master_list()
 
         def master_list_append(self, m):
@@ -89,10 +84,11 @@ class ProxyService(rpyc.Service):
             # force master nodes to have the same master list
             def master_update(master):
                 try:
-                    con = rpyc.connect(*master)
+                    h, p = master
+                    con = rpyc.connect(h, p)
                     M = self.__class__.master_list[:]
                     M.remove(master)
-                    con.root.Master().update_masters(M)
+                    con.root.Master().update_masters(tuple(M))
                 except ConnectionRefusedError:
                     self.master_list_remove(master)
 
@@ -107,8 +103,8 @@ def startProxyService(proxy_port=DEFAULT_PROXY_PORT,
                         datefmt='%m/%d/%Y %I:%M:%S %p',
                         level=logging.DEBUG)
 
-    proxy = ProxyService.exposed_Proxy
-    proxy.master_list = [('127.0.0.1', x) for x in master_list]
+    # proxy = ProxyService.exposed_Proxy
+    # proxy.master_list = [('127.0.0.1', x) for x in master_list]
     t = ThreadedServer(ProxyService, port=proxy_port)
     t.start()
 

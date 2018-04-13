@@ -59,6 +59,10 @@ class Client:
         print('[Client] Put into {}: {}'.format(dest, source))
         size = os.path.getsize(source)
         blocks = self.master.write(dest, size)
+        # when request cannot be satisfied, an error msg is returned.
+        if type(blocks) is str:
+            print(blocks)
+            return
         with open(source) as f:
             for block_uuid, node_ids in blocks:
                 data = f.read(self.master.get_block_size())
