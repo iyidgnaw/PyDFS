@@ -60,7 +60,7 @@ class Client:
         size = os.path.getsize(source)
         blocks = self.master.write(dest, size)
         # when request cannot be satisfied, an error msg is returned.
-        if type(blocks) is str:
+        if isinstance(blocks, str):
             print(blocks)
             return
         with open(source) as f:

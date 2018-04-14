@@ -67,7 +67,7 @@ class Admin():
             return
         self.kill_pros(self.min_pool, port)
 
-    # below 4 functions seem repitative, feel free to change if you have free time
+    # below methods seem repitative, feel free to change if you have free time
     def create_minion(self, port=None):
         if port in self.min_pool:
             return
@@ -95,7 +95,8 @@ class Admin():
             while port in ports_in_use:
                 port += 1
 
-        self.master_pool[port] = Process(target=startMasterService, args=([], port))
+        self.master_pool[port] = Process(target=startMasterService, \
+            args=([], port))
         self.master_pool[port].start()
         self.proxy_con.root.Proxy().add_master(('localhost', port))
         print('Master node created at localhost:{}'.format(port))
@@ -124,10 +125,8 @@ class Admin():
         for port in DEFAULT_MINION_PORTS:
             self.create_minion(port)
 
-    
 
     def main(self, args):
-        
         command_map = {
             'ls': self.print_processes,
             'add': self.create_instance,
