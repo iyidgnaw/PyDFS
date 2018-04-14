@@ -21,7 +21,7 @@ $ python client.py get sometxt
 Priority:
   - ~~Minion heartbeats~~ / Block reports (on which Luke is working)
   - Add entry in namespace only after write succeeds
-  - Admin interface: ~~NODE_CREATE, NODE_KILL~~, GET, PUT, DELETE (Luke)
+  - Admin interface: ~~NODE_CREATE, NODE_KILL, GET, PUT, DELETE~~ (Luke)
   - ~~High level use cases in demo~~ (xinwen)
   - ~~Delete/Add minion node~~ (diyi)
   - ~~Block integrity check~~ (diyi)

@@ -8,6 +8,7 @@ from conf import DEFAULT_MINION_PORTS, DEFAULT_MASTER_PORTS, DEFAULT_PROXY_PORT
 from minion import startMinionService
 from master import startMasterService
 from proxy import startProxyService
+from client import main as client
 ###############################################################################
 # there are some ADMIN APIs we might want to consider.
 
@@ -17,7 +18,10 @@ HELP_MSG = '\nAdmin Commands:\n\
     add master: create a master process\n\
     kill master: kill a master process\n\
     add minion: create a minion process\n\
-    kill minion: kill a minion process\n'
+    kill minion: kill a minion process\n\
+    put <dest_filename> <source_filename>: put a file\n\
+    get <filename>: get a file\n\
+    delete <filename>: delete a file\n'
 
 class Admin():
     def __init__(self):
@@ -25,8 +29,11 @@ class Admin():
         self.min_pool = {}
         self.master_pool = {}
 
-        self.proxy_process = None
-        self.proxy_con = None
+        self.proxy_process = Process(target=startProxyService,\
+                                args=(DEFAULT_PROXY_PORT, []))
+        self.proxy_process.start()
+        self.proxy_con = connect('localhost', DEFAULT_PROXY_PORT)
+        print('Proxy node created at localhost:{}'.format(DEFAULT_PROXY_PORT))
 
     def get_all_processes(self):
         for p in self.min_pool:
@@ -44,7 +51,7 @@ class Admin():
         print(self.proxy_process)
 
     def kill_pros(self, pros_map, port=None):
-    # kill a random process from pros_map if port is not provided
+        # kill a random process from pros_map if port is None
         if not port:
             port = random.choice(list(pros_map.keys()))
         pros_map[port].terminate()
@@ -102,7 +109,8 @@ class Admin():
         print('Master node created at localhost:{}'.format(port))
 
 
-    def create_instance(self, instance):
+    def create_instance(self, args):
+        instance = args.pop(0)
         if instance == 'master':
             self.create_master()
         elif instance in ('minion', 'worker', 'slave'):
@@ -110,7 +118,8 @@ class Admin():
         else:
             print('try adding master or minion instead of', instance)
 
-    def kill_instance(self, instance):
+    def kill_instance(self, args):
+        instance = args.pop(0)
         if instance == 'master':
             self.kill_master()
         elif instance in ('minion', 'worker', 'slave'):
@@ -130,14 +139,11 @@ class Admin():
         command_map = {
             'ls': self.print_processes,
             'add': self.create_instance,
-            'kill': self.kill_instance
+            'kill': self.kill_instance,
+            'put': lambda args: client(['put'] + args),
+            'get': lambda args: client(['get'] + args),
+            'delete': lambda args: client(['delete'] + args)
         }
-
-        self.proxy_process = Process(target=startProxyService,\
-                                args=(DEFAULT_PROXY_PORT, []))
-        self.proxy_process.start()
-        self.proxy_con = connect('localhost', DEFAULT_PROXY_PORT)
-        print('Proxy node created at localhost:{}'.format(DEFAULT_PROXY_PORT))
 
         if not args:
             # Fireup everything accroding to conf.py
@@ -145,11 +151,12 @@ class Admin():
 
         elif args[0] in ('-i', '--interactive'):
             while 1:
-                cmd = input('\n>>> ').strip()
-                if not cmd:
+                args = input('\n>>> ').strip().split(' ')
+                if not args or not args[0]:
                     continue
-                cmd, arg = cmd.split(' ') if ' ' in cmd else (cmd, None)
-                command_map.get(cmd, lambda x: print(self.HELP_MSG))(arg)
+                cmd = args.pop(0)
+                assert(cmd == 'ls' or args)
+                command_map.get(cmd, lambda x: print(HELP_MSG))(args)
         else:
             print('use -i or --interactive to enter interactive mode')
 

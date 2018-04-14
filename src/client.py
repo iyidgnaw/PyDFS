@@ -85,10 +85,16 @@ class Client:
 
 
 def main(args):
+    if not args:
+        print('please use "get", "put" or "delete"')
+        return
     client_service = Client(DEFAULT_PROXY_PORT)
     if args[0] == 'get':
         client_service.get(args[1])
     elif args[0] == 'put':
+        if len(args) < 2:
+            print('not enough argument, use "put source dest"')
+            return
         client_service.put(args[1], args[2])
     elif args[0] == 'delete':
         client_service.delete(args[1])
