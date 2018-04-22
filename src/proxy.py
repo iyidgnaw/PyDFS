@@ -3,6 +3,7 @@
 # Some Thoughts: In production environments, 'proxy server' can be a cluster.
 import logging
 from threading import Thread
+import time
 import os
 import rpyc
 from rpyc.utils.server import ThreadedServer
@@ -19,6 +20,8 @@ class ProxyService(rpyc.Service):
         def exposed_add_master(self, m):
             self.master_list_append(m)
             self.check_con()
+            # Wait the rpyc connect to be closed from proxy to master
+            time.sleep(0.2)
             if len(self.__class__.master_list) > 1:
                 self.exposed_get_master().new_sibling(m)
 
