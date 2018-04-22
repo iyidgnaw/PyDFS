@@ -172,12 +172,6 @@ class MasterService(rpyc.Service):
 ###############################################################################
         # Private functions
 ###############################################################################
-        # DEBUG USE ONLY
-        # def exposed_eval_this(self, statement):
-        #     eval(statement)
-
-
-
         def flush(self, table, entry_key, wipe):
             # flush one entry in the given attr table to other masters
             attr = getattr(self.__class__, table)
@@ -217,6 +211,8 @@ class MasterService(rpyc.Service):
 
                 self.__class__.file_table[dest] += (block_uuid,)
             self.flush_attr_entry('file_table', dest)
+            self.flush_attr_table('block_mapping')
+            self.flush_attr_table('minion_content')
             return blocks
 
         def calc_num_blocks(self, size):

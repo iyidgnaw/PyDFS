@@ -5,20 +5,23 @@ sys.path.append('..')
 
 from conf import clean
 from conf import DEFAULT_PROXY_PORT
-from admin import setupDefaultEnv, tearDownDefaultEnv
+from admin import Admin
 from client import Client
 
 class TestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        setupDefaultEnv()
+        cls.admin = Admin()
+        cls.admin.conf_setup()
         clean()
         cls.test_client = Client(DEFAULT_PROXY_PORT)
 
     @classmethod
     def tearDownClass(cls):
-        tearDownDefaultEnv()
+        for p in cls.admin.get_all_processes():
+            p.terminate()
         clean()
+
 
 def suiteRunner(testcases):
     # Run test cases in order

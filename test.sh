@@ -5,9 +5,6 @@
 
 # Clean up 
 clean(){
-  pkill -f master.py
-  pkill -f minion.py
-  pkill -f proxy.py
   pkill -f admin.py
   rm -f tmp.txt
   rm -f fs.img
@@ -69,8 +66,37 @@ fi
 ###############################################################################
 # Clean up and quit
 ###############################################################################
-echo "Test Complete!"
+echo "Basic Functional Test Complete!"
 
 clean
+sleep 3
+echo "Unit test"
+
+###############################################################################
+# Unit test
+###############################################################################
+cd test
+# Here all the unittest suite should be called from command line, since the test
+# cases inside may have implicit order. Run `python -m unittest` will run those
+# test cases in wrong order.
+python3 test_master.py
+if [[ $? -ne 0 ]]; then
+  echo "Mater is not correct"
+  clean
+  exit 1
+fi
+python3 test_minion.py
+if [[ $? -ne 0 ]]; then
+  echo "Minion is not correct"
+  clean
+  exit 1
+fi
+python3 test_proxy.py
+if [[ $? -ne 0 ]]; then
+  echo "Proxy is not correct"
+  clean
+  exit 1
+fi
+
 exit 0
 

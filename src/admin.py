@@ -111,19 +111,21 @@ class Admin():
 
     def create_instance(self, args):
         instance = args.pop(0)
+        port = args.pop(0) if args else None
         if instance == 'master':
-            self.create_master()
+            self.create_master(int(port))
         elif instance in ('minion', 'worker', 'slave'):
-            self.create_minion()
+            self.create_minion(int(port))
         else:
             print('try adding master or minion instead of', instance)
 
     def kill_instance(self, args):
         instance = args.pop(0)
+        port = args.pop(0) if args else None
         if instance == 'master':
-            self.kill_master()
+            self.kill_master(int(port))
         elif instance in ('minion', 'worker', 'slave'):
-            self.kill_minion()
+            self.kill_minion(int(port))
         else:
             print('try killing master or minion instead of', instance)
 
@@ -170,4 +172,3 @@ if __name__ == '__main__':
     admin = Admin()
     signal(SIGINT, admin.stut_down)
     admin.main(sys.argv[1:])
-        
