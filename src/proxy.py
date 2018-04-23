@@ -108,7 +108,7 @@ class ProxyService(rpyc.Service):
                     con.root.Master().update_masters(tuple(M))
                 except ConnectionRefusedError:
                     print('[proxy] flush master list refused by', master)
-                    self.master_list_remove(master)
+                    # self.master_list_remove(master)
 
             for master in self.__class__.master_list:
                 Thread(target=master_update, args=(master,)).start()

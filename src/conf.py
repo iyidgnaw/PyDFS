@@ -9,7 +9,7 @@ REPLICATION_FACTOR = 3
 # Default values for starting all services
 DEFAULT_MINION_PORTS = (8888, 8889, 8890, 8891)
 DEFAULT_PROXY_PORT = 2130
-DEFAULT_MASTER_PORTS = (2131, )
+DEFAULT_MASTER_PORTS = (2131, 2132)
 
 LOG_DIR = '/tmp/minion/log'
 if not os.path.isdir(LOG_DIR):

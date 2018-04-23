@@ -41,16 +41,17 @@ class MasterService(rpyc.Service):
                         for block_id in self.__class__.file_table[fname]]
             return None
 
-        def exposed_delete(self, fname):
+        def exposed_delete(self, fname, prop=True):
             def siblings_delete(fname):
                 for (h, p) in self.__class__.master_list:
                     try:
                         m = rpyc.connect(h, p)
-                        m.root.Master().delete(fname)
+                        m.root.Master().delete(fname, False)
                     except ConnectionRefusedError:
                         continue
 
-            Thread(target=siblings_delete, args=[fname]).start()
+            if prop:
+                Thread(target=siblings_delete, args=[fname]).start()
 
             for block_id in self.__class__.file_table[fname]:
                 for mid in self.__class__.block_mapping[block_id]:
