@@ -112,7 +112,7 @@ class Admin():
 
     def create_instance(self, args):
         instance = args.pop(0)
-        port = args.pop(0) if args else None
+        port = args.pop(0) if args else 0
         if instance == 'master':
             self.create_master(int(port))
         elif instance in ('minion', 'worker', 'slave'):
@@ -122,7 +122,7 @@ class Admin():
 
     def kill_instance(self, args):
         instance = args.pop(0)
-        port = args.pop(0) if args else None
+        port = args.pop(0) if args else 0
         if instance == 'master':
             self.kill_master(int(port))
         elif instance in ('minion', 'worker', 'slave'):

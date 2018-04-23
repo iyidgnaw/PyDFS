@@ -49,6 +49,7 @@ class ProxyService(rpyc.Service):
             try:
                 host, port = self.current_master()
                 self.__class__.master_con = rpyc.connect(host, port=port)
+                self.__class__.master_con.root.Master().health_report()
                 return True
             except ConnectionRefusedError:
                 Thread(target=self.recover_master).start()

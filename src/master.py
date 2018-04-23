@@ -121,6 +121,7 @@ class MasterService(rpyc.Service):
             self.flush_attr_entry('minions', mid)
             self.flush_attr_entry('minion_content', mid)
 
+
         def exposed_replicate(self, mid):
             for block_id in self.__class__.minion_content[mid]:
                 locations = self.__class__.block_mapping[block_id]
@@ -221,6 +222,11 @@ class MasterService(rpyc.Service):
         def minion_lost_handler(self, status):
             # TODO
             logging.info('1 or more minion dead, status: %s', format(status))
+            lost_minions = [mid for mid, value in status.items() if not value]
+            for mid in lost_minions:
+                self.exposed_admin_delete_minion(mid)
+            logging.info('Replicate done')
+
 
         def health_monitor(self):
             # actively reach out to minions forever
@@ -229,7 +235,7 @@ class MasterService(rpyc.Service):
                 minions_status = self.health_check()
                 if not all(minions_status.values()):
                     self.minion_lost_handler(minions_status)
-                sleep(.1)
+                sleep(0.2)
 
         def health_check(self):
             # reach out to known minions on file
