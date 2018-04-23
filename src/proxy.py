@@ -24,6 +24,7 @@ class ProxyService(rpyc.Service):
             time.sleep(0.2)
             if len(self.__class__.master_list) > 1:
                 self.exposed_get_master().new_sibling(m)
+            # print('[proxy] master added', self.__class__.master_list)
 
         def exposed_delete_master(self, m):
             if m == self.current_master():
@@ -37,14 +38,24 @@ class ProxyService(rpyc.Service):
             # return connection to master, MAYBE RETURN None.
             if self.check_con():
                 return self.__class__.master_con.root.Master()
-            return None
+            time.sleep(0.5)
+            print('[proxy] trying to discover another master...')
+            if self.check_con():
+                return self.__class__.master_con.root.Master()
+            else:
+                print('[proxy] failed to discover master.')
+                return None
 #########################################################################
         # Private functions
 ################################################################################
         def check_con(self):
             # Return true if connection is okay
             if self.__class__.master_con:
-                return True
+                try:
+                    self.__class__.master_con.ping()
+                    return True
+                except EOFError:
+                    pass
             # below code only run once when get_master called first time
             try:
                 host, port = self.current_master()
@@ -57,10 +68,11 @@ class ProxyService(rpyc.Service):
                 return False
 
         def recover_master(self):
+            print('recover_master', self.__class__.master_list)
             # recover_master is called when we would like to discard the
             # current master and find a new master from the master_list
             logging.info('trying to use next master.')
-            m = self.current_master
+            m = self.current_master()
             self.__class__.master_back_list.append(m)
             self.master_list_remove(m)
             while self.__class__.master_list:
@@ -95,6 +107,7 @@ class ProxyService(rpyc.Service):
                     M.remove(master)
                     con.root.Master().update_masters(tuple(M))
                 except ConnectionRefusedError:
+                    print('[proxy] flush master list refused by', master)
                     self.master_list_remove(master)
 
             for master in self.__class__.master_list:

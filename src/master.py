@@ -122,6 +122,7 @@ class MasterService(rpyc.Service):
             self.__class__.minion_content[mid] = tuple()
             self.flush_attr_entry('minions', mid)
             self.flush_attr_entry('minion_content', mid)
+            # print('[Master] add minion complete', self.__class__.minions)
 
 
         def exposed_replicate(self, mid):
@@ -149,12 +150,12 @@ class MasterService(rpyc.Service):
             # update_attr is used by self.flush method.
             # a_name is the table we wish to update
             # a_value is the new values (in the form of tupled dict_items)
-            attr = getattr(self.__class__, a_name)
-            assert isinstance(attr, dict) and isinstance(a_value, tuple)
-            if wipe_original:
-                attr = {}
+            old_attr = getattr(self.__class__, a_name)
+            assert isinstance(old_attr, dict) and isinstance(a_value, tuple)
             # update given attribute using the given update values
-            attr = dict(tuple(attr.items()) + a_value)
+            setattr(self.__class__, a_name, dict(a_value + \
+                (tuple() if wipe_original else tuple(old_attr.items()))))
+            # print('updated', a_name, a_value, '->', getattr(self.__class__, a_name))
 
         def exposed_update_masters(self, M):
             # M is the new master list

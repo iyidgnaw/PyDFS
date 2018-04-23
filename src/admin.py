@@ -1,6 +1,7 @@
 import sys
 from multiprocessing import Process
 import random
+import time
 from signal import signal, SIGINT
 from rpyc import connect
 
@@ -64,7 +65,7 @@ class Admin():
             return
         self.kill_pros(self.master_pool, port)
         if not self.master_pool:
-            print('no master left, clean minions')
+            print('no master left, all minions terminated')
             for minion in self.min_pool.values():
                 minion.terminate()
             self.min_pool = {}
@@ -90,6 +91,7 @@ class Admin():
 
         self.min_pool[port] = Process(target=startMinionService, args=(port,))
         self.min_pool[port].start()
+        time.sleep(0.3)
         self.proxy_con.root.Proxy().get_master().add_minion('localhost', port)
         print('Minion node created at localhost:{}'.format(port))
 
@@ -106,6 +108,7 @@ class Admin():
         self.master_pool[port] = Process(target=startMasterService, \
             args=([], port))
         self.master_pool[port].start()
+        time.sleep(0.3)
         self.proxy_con.root.Proxy().add_master(('localhost', port))
         print('Master node created at localhost:{}'.format(port))
 
@@ -140,6 +143,7 @@ class Admin():
 
     def main(self, args):
         command_map = {
+            'all': lambda args: self.conf_setup(),
             'ls': self.print_processes,
             'add': self.create_instance,
             'kill': self.kill_instance,
@@ -158,7 +162,7 @@ class Admin():
                 if not args or not args[0]:
                     continue
                 cmd = args.pop(0)
-                assert(cmd == 'ls' or args)
+                # assert(cmd == 'ls' or args)
                 command_map.get(cmd, lambda x: print(HELP_MSG))(args)
         else:
             print('use -i or --interactive to enter interactive mode')

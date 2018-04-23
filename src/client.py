@@ -11,6 +11,8 @@ class Client:
                 config={'sync_request_timeout':60})
         self.proxy = self.con.root.Proxy()
         self.master = self.proxy.get_master()
+        if not self.master:
+            print('[Client] was not able to obtain connection to the cluster.')
 
     def send_to_minion(self, block_uuid, data, minions):
         print('[Client] Sending: ' + str(block_uuid) + str(minions))

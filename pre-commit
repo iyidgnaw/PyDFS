@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Pylint
-find . -iname "*.py" | xargs python3 -m pylint
+find . -iname "*.py" | xargs python3 -m pylint --rcfile=./google-pylint.rc
 if [[ $? -ne 0 ]]; then
   echo "Commit Aborted. Please resolve the pylint warning and try again"
   exit 1 
