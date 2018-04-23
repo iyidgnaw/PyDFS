@@ -7,7 +7,8 @@ from conf import DEFAULT_PROXY_PORT
 
 class Client:
     def __init__(self, proxy_port_num):
-        self.con = rpyc.connect('localhost', proxy_port_num)
+        self.con = rpyc.connect('localhost', proxy_port_num,
+                config={'sync_request_timeout':60})
         self.proxy = self.con.root.Proxy()
         self.master = self.proxy.get_master()
 
@@ -82,6 +83,9 @@ class Client:
         for block_uuid, node_ids in file_table:
             for m in self.master.get_minions(node_ids):
                 self.delete_from_minion(block_uuid, m)
+
+    def close(self):
+        self.con.close()
 
 
 def main(args):

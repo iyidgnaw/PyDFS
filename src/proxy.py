@@ -48,7 +48,8 @@ class ProxyService(rpyc.Service):
             # below code only run once when get_master called first time
             try:
                 host, port = self.current_master()
-                self.__class__.master_con = rpyc.connect(host, port=port)
+                self.__class__.master_con = rpyc.connect(host, port=port,
+                        config={'sync_request_timeout':120})
                 self.__class__.master_con.root.Master().health_report()
                 return True
             except ConnectionRefusedError:

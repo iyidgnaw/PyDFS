@@ -248,6 +248,7 @@ class MasterService(rpyc.Service):
                     con = rpyc.connect(host, port=port)
                     minion = con.root.Minion()
                     res[m] = 1 if minion.ping() == 'pong' else 0
+                    con.close()
                 except ConnectionRefusedError:
                     res[m] = 0
             return res

@@ -4,9 +4,7 @@ import sys
 sys.path.append('..')
 
 from conf import clean
-from conf import DEFAULT_PROXY_PORT
 from admin import Admin
-from client import Client
 
 class TestCase(unittest.TestCase):
     @classmethod
@@ -14,7 +12,6 @@ class TestCase(unittest.TestCase):
         cls.admin = Admin()
         cls.admin.conf_setup()
         clean()
-        cls.test_client = Client(DEFAULT_PROXY_PORT)
 
     @classmethod
     def tearDownClass(cls):

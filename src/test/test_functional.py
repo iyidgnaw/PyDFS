@@ -18,33 +18,37 @@ with open(TEST_FILE_NAME, 'w') as f:
 class FunctionalTest(TestCase):
     def test_basic(self):
         ''' Baisc functionalt test: put, get, delete'''
-        self.client = Client(DEFAULT_PROXY_PORT)
-        self.client.put(TEST_FILE_NAME, 'tmp')
-        rc = self.client.get('tmp')
+        client = Client(DEFAULT_PROXY_PORT)
+        client.put(TEST_FILE_NAME, 'tmp')
+        rc = client.get('tmp')
         self.assertEqual(rc, TEST_FILE_DATA)
-        self.client.delete('tmp')
-        rc = self.client.get('tmp')
+        client.delete('tmp')
+        rc = client.get('tmp')
         self.assertEqual(rc, '')
 
     def test_randomly_kill_minion(self):
         ''' Kill&Create minion 6 times then try [GET] request'''
-        self.client = Client(DEFAULT_PROXY_PORT)
-        self.client.put(TEST_FILE_NAME, 'tmp')
+        client = Client(DEFAULT_PROXY_PORT)
+        client.put(TEST_FILE_NAME, 'tmp')
+        client.close()
         # Need to create one more minion so that we are allowed to kill minion
         self.__class__.admin.create_minion(9999)
         for _ in range(6):
             port = random.choice(DEFAULT_MINION_PORTS)
             self.__class__.admin.kill_minion(port)
-            time.sleep(2)
+            time.sleep(4)
             self.__class__.admin.create_minion(port)
-        rc = self.client.get('tmp')
+            time.sleep(1)
+        client = Client(DEFAULT_PROXY_PORT)
+        rc = client.get('tmp')
         self.assertEqual(rc, TEST_FILE_DATA)
 
     def test_fault_tolerant(self):
         ''' Put a test data, then add 4 more minion and kill all the default
         minions. Check the integrity of data'''
-        self.client = Client(DEFAULT_PROXY_PORT)
-        self.client.put(TEST_FILE_NAME, 'tmp')
+        client = Client(DEFAULT_PROXY_PORT)
+        client.put(TEST_FILE_NAME, 'tmp')
+        client.close()
         for port in range(8892, 8896):
             self.__class__.admin.create_minion(port)
             time.sleep(0.5)
@@ -53,15 +57,17 @@ class FunctionalTest(TestCase):
             self.__class__.admin.kill_minion(default_port)
             # Give the system some time to handle the minion lost
             time.sleep(4)
-        rc = self.client.get('tmp')
+        client = Client(DEFAULT_PROXY_PORT)
+        rc = client.get('tmp')
+        client.close()
         self.assertEqual(rc, TEST_FILE_DATA)
 
     def test_kill_current_master(self):
-        self.client = Client(DEFAULT_PROXY_PORT)
-        self.client.put(TEST_FILE_NAME, 'tmp')
+        client = Client(DEFAULT_PROXY_PORT)
+        client.put(TEST_FILE_NAME, 'tmp')
         self.__class__.admin.kill_master(DEFAULT_MASTER_PORTS[0])
         time.sleep(3)
-        rc = self.client.get('tmp')
+        rc = client.get('tmp')
         self.assertEqual(rc, TEST_FILE_DATA)
 
 
