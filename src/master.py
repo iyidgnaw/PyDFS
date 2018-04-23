@@ -1,3 +1,4 @@
+import copy
 import logging
 import math
 import os
@@ -241,7 +242,8 @@ class MasterService(rpyc.Service):
             # reach out to known minions on file
             # RETURN {minion -> [10]}
             res = {}
-            for m, (host, port) in self.__class__.minions.items():
+            minions = copy.deepcopy(self.__class__.minions)
+            for m, (host, port) in minions.items():
                 try:
                     con = rpyc.connect(host, port=port)
                     minion = con.root.Minion()

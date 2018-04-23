@@ -52,7 +52,7 @@ class FunctionalTest(TestCase):
         for default_port in DEFAULT_MINION_PORTS:
             self.__class__.admin.kill_minion(default_port)
             # Give the system some time to handle the minion lost
-            time.sleep(2)
+            time.sleep(4)
         rc = self.client.get('tmp')
         self.assertEqual(rc, TEST_FILE_DATA)
 
