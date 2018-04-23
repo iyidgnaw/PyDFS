@@ -56,6 +56,7 @@ class Admin():
             port = random.choice(list(pros_map.keys()))
         pros_map[port].terminate()
         del pros_map[port]
+        print('Service killed on localhost:{}'.format(port))
 
     def kill_master(self, port=None):
         if not self.master_pool:

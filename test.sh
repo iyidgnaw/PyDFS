@@ -9,73 +9,12 @@ clean(){
   rm -f tmp.txt
   rm -f fs.img
 }
-###############################################################################
-# Init
-###############################################################################
-
-cd src
-clean
-# Fireup default test env
-python3 admin.py&
-if [[ $? -ne 0 ]]; then
-  echo "Failed to fireup the test env. Please debug separtely!"
-  exit 1
-fi
-sleep 3
-
-# Create file with test msg
-TEST_MSG="TEST MESSAGE"
-NOT_FOUND_MSG="[Client] File Not Found"
-echo $TEST_MSG > tmp.txt
-
-###############################################################################
-# Put
-###############################################################################
-python3 client.py put tmp.txt tmp
-if [[ $? -ne 0 ]]; then
-  echo "Put operation failed!"
-  clean
-  exit 1
-fi
-
-###############################################################################
-# Get
-###############################################################################
-output=$(python3 client.py get tmp)
-echo $output
-if [[ $output != "[Client] Get from tmp: $TEST_MSG" ]]; then
-  echo "GET operation failed!"
-  clean
-  exit 1
-fi
-
-###############################################################################
-# Delete
-###############################################################################
-python3 client.py delete tmp
-
-# Try Get
-output=$(python3 client.py get tmp)
-echo $output
-if [[ $output != "$NOT_FOUND_MSG" ]]; then
-  echo "Delete operation failed!"
-  clean
-  exit 1
-fi
-
-###############################################################################
-# Clean up and quit
-###############################################################################
-echo "Basic Functional Test Complete!"
-
-clean
-sleep 3
-echo "Unit test"
 
 ###############################################################################
 # Unit test
 ###############################################################################
-cd test
+cd src/test
+clean
 # Here all the unittest suite should be called from command line, since the test
 # cases inside may have implicit order. Run `python -m unittest` will run those
 # test cases in wrong order.
@@ -97,6 +36,17 @@ if [[ $? -ne 0 ]]; then
   clean
   exit 1
 fi
+
+###############################################################################
+# Functional test
+###############################################################################
+python3 test_functional.py
+if [[ $? -ne 0 ]]; then
+  echo "System is not fully functional, plz check the error message"
+  clean
+  exit 1
+fi
+
 
 exit 0
 
