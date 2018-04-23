@@ -34,10 +34,24 @@ class MasterTestCase(test_util.TestCase):
         block_info = master.read(test_dest)
         self.assertEqual(block_info, None)
 
+    def test_add_minion(self):
+        con = rpyc.connect('127.0.0.1', port=DEFAULT_MASTER_PORTS[0])
+        master = con.root.Master()
+        master.add_minion('localhost', 9999)
+        self.assertEqual(('localhost', 9999), master.get_minion(4))
+
+    def test_delete_minion(self):
+        con = rpyc.connect('127.0.0.1', port=DEFAULT_MASTER_PORTS[0])
+        master = con.root.Master()
+        master.delete_minion(4)
+        self.assertEqual(None, master.get_minion(4))
+
+
 
     #TODO: Add more test cases here
 
 if __name__ == '__main__':
     tests = [MasterTestCase('test_write'), MasterTestCase('test_read'),
-            MasterTestCase('test_delete')]
+             MasterTestCase('test_delete'), MasterTestCase('test_add_minion'),
+             MasterTestCase('test_delete_minion')]
     suiteRunner(tests)

@@ -3,6 +3,7 @@ import logging
 import math
 import os
 import random
+import sys
 import uuid
 from threading import Thread
 from time import sleep
@@ -78,10 +79,10 @@ class MasterService(rpyc.Service):
             return self.__class__.block_size
 
         def exposed_get_minions(self, mid_list):
-            return tuple(self.__class__.minions[mid] for mid in mid_list)
+            return tuple(self.__class__.minions.get(mid) for mid in mid_list)
 
         def exposed_get_minion(self, mid):
-            return self.__class__.minions[mid]
+            return self.__class__.minions.get(mid)
 
         def exposed_admin_delete_minion(self, mid):
             # peacefully (intentionally) delete minion
@@ -305,4 +306,4 @@ def startMasterService(minion_ports=DEFAULT_MINION_PORTS,
 
 if __name__ == '__main__':
     # by default use config.py
-    startMasterService()
+    startMasterService(master_port=int(sys.argv[1]))
