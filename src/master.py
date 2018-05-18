@@ -42,17 +42,17 @@ class MasterService(rpyc.Service):
             return None
 
         def exposed_delete(self, fname, prop=True):
-            def siblings_delete(fname):
-                for (h, p) in self.__class__.master_list:
-                    try:
-                        m = rpyc.connect(h, p)
-                        m.root.Master().delete(fname, False)
-                    except ConnectionRefusedError:
-                        continue
-
-            if prop:
-                Thread(target=siblings_delete, args=[fname]).start()
-
+#            def siblings_delete(fname):
+#                for (h, p) in self.__class__.master_list:
+#                    try:
+#                        m = rpyc.connect(h, p)
+#                        m.root.Master().delete(fname, False)
+#                    except ConnectionRefusedError:
+#                        continue
+#
+#            if prop:
+#                Thread(target=siblings_delete, args=[fname]).start()
+#
             for block_id in self.__class__.file_table[fname]:
                 for mid in self.__class__.block_mapping[block_id]:
                     m_cont = self.__class__.minion_content[mid]
@@ -90,19 +90,16 @@ class MasterService(rpyc.Service):
             # where deleted minion's data gets replicated.
             self.exposed_replicate(mid)
 
-            # host, port = self.__class__.minions[mid]
-            # con = rpyc.connect(host, port=port)
-            # minion = con.root.Minion()
-            def sublings_delete_minion(mid):
-                for (h, p) in self.__class__.master_list:
-                    try:
-                        m = rpyc.connect(h, p)
-                        m.root.Master().delete_minion(mid)
-                    except ConnectionRefusedError:
-                        continue
+#            def sublings_delete_minion(mid):
+#                for (h, p) in self.__class__.master_list:
+#                    try:
+#                        m = rpyc.connect(h, p)
+#                        m.root.Master().delete_minion(mid)
+#                    except ConnectionRefusedError:
+#                        continue
 
             self.exposed_delete_minion(mid)
-            Thread(target=sublings_delete_minion, args=[mid]).start()
+            #Thread(target=sublings_delete_minion, args=[mid]).start()
 
         def exposed_delete_minion(self, mid):
             # 'delete minion' in a sense where we only update Master metadata
@@ -156,7 +153,6 @@ class MasterService(rpyc.Service):
             # update given attribute using the given update values
             setattr(self.__class__, a_name, dict(a_value + \
                 (tuple() if wipe_original else tuple(old_attr.items()))))
-            # print('updated', a_name, a_value, '->', getattr(self.__class__, a_name))
 
         def exposed_update_masters(self, M):
             # M is the new master list

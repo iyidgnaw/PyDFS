@@ -42,9 +42,8 @@ class ProxyService(rpyc.Service):
             print('[proxy] trying to discover another master...')
             if self.check_con():
                 return self.__class__.master_con.root.Master()
-            else:
-                print('[proxy] failed to discover master.')
-                return None
+            print('[proxy] failed to discover master.')
+            return None
 #########################################################################
         # Private functions
 ################################################################################
