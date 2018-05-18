@@ -19,13 +19,11 @@ $ python client.py get sometxt
 
 ## TODO:
 Priority:
-  - ~~Minion heartbeats~~ / Block reports (on which Luke is working)
+  - ~~Minion heartbeats~~ / Block reports (Luke)
   - Add entry in namespace only after write succeeds
   - Admin interface: ~~NODE_CREATE, NODE_KILL, GET, PUT, DELETE~~ (Luke)
-  - ~~High level use cases in demo~~ (xinwen)
   - ~~Delete/Add minion node~~ (diyi)
   - ~~Block integrity check~~ (diyi)
-  - ~~Logging issue in minion service~~ (xinwen)
 
 Optional:
   - Use better algo for minion selection to put a block (currently random)
@@ -33,8 +31,9 @@ Optional:
   - Use proper datastructure(tree-like eg. treedict) to store namespace(currently simple dict)
 
 ### Dev
-    
-
 #### To use the pre commit hook
   1. copy pre-commit to .git/hook and change the file permission if necessary
   2. Install Pylint (for python3) and use "google-pylint.rc" as your pylint config
+
+### Issue:
+  1. ReferenceError in master sync.
